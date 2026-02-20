@@ -1,8 +1,8 @@
 # TriviaForge - Active Development Tasks (2026)
 
 > **Purpose:** Current development priorities and pending tasks
-> **Last Updated:** 2026-02-18
-> **Version:** v5.6.0
+> **Last Updated:** 2026-02-19
+> **Version:** v5.7.0
 
 ---
 
@@ -32,6 +32,39 @@
 ---
 
 ## 🚀 Current Priorities (Active Development)
+
+### v5.7.0 Features - Admin-Configurable Server URL ✅ COMPLETE
+
+**Status:** ✅ COMPLETE
+**Priority:** HIGH
+**Completed:** 2026-02-19
+**Branch:** `server-url-tweaks-v5.7.0`
+
+#### Admin Server URL Settings Panel ✅
+- [x] New Server Settings panel in Admin > Settings tab
+- [x] Shows auto-detected IP and active QR code URL
+- [x] Custom server URL input with save/clear functionality
+- [x] Dynamic URL resolution per-request (DB setting > env var > auto-detected IP)
+- [x] Database migration for server_url in app_settings
+- [x] URL format validation on save
+
+#### Player Auth Redirect Fix ✅
+- [x] Fixed pre-existing bug where players with expired tokens were redirected to landing page
+- [x] Added verify-player to 401 interceptor exclusion list in useApi.js
+
+**Files Created:**
+- `app/init/15-server-url-setting.sql` - Database migration
+- `app/src/components/admin/ServerSettingsPanel.vue` - Server settings panel
+
+**Files Modified:**
+- `app/server.js` - Dynamic `getServerUrl()`, updated QR endpoints, updated loadQuizOptions/GET/POST options
+- `app/src/pages/AdminPage.vue` - Added ServerSettingsPanel to Settings tab
+- `app/src/composables/useApi.js` - Fixed 401 interceptor for player auth
+- `app/src/config/version.js` - Version bump to v5.7.0
+- `docker-compose.yml` - Updated SERVER_URL default
+- `.env.example` - Updated SERVER_URL comments
+
+---
 
 ### v5.6.0 Features - Game Experience & Results Display ✅ COMPLETE
 
@@ -613,7 +646,7 @@ Add notification to presenter when all connected players have answered the curre
 ### Player & Presenter Features
 - [x] Automated Presenter Mode with Timers (auto-reveal, auto-advance) - v5.4.0 ✅
 - [x] Solo-Play Mode for Players (self-study without presenter) - v5.4.0 ✅
-- [ ] mDNS Service Discovery + Smart QR Code URLs (design phase complete, ready for implementation)
+- [x] Admin-Configurable Server URL for QR codes (replaces mDNS approach) - v5.7.0 ✅
 - [ ] Session analytics with charts/graphs (future)
 
 ### Bug Investigations
@@ -624,7 +657,7 @@ Add notification to presenter when all connected players have answered the curre
 
 ## 📝 Development Notes
 
-### Current Focus Areas (v5.6.0)
+### Current Focus Areas (v5.7.0)
 1. ~~**2FA TOTP:** Two-Factor Authentication for admins~~ ✅ COMPLETE (v5.2.0)
 2. ~~**Session Export:** CSV export of session results~~ ✅ COMPLETE (v5.2.0)
 3. ~~**Session Filtering:** Date range, quiz, status filters~~ ✅ COMPLETE (v5.2.0)
@@ -635,8 +668,9 @@ Add notification to presenter when all connected players have answered the curre
 8. ~~**Solo-Play Mode:** Self-study without presenter~~ ✅ COMPLETE (v5.4.0)
 9. ~~**Backend Performance:** Memory cleanup, rate limiting, session health~~ ✅ COMPLETE (v5.5.0)
 10. **v5.6.0:** Game Experience & Results Display ✅ COMPLETE
-11. **Remember Device:** 30-day trusted device for 2FA (planned v5.7.0)
-12. **PDF Export:** Proper PDF formatting for session results (future)
+11. **v5.7.0:** Admin-Configurable Server URL ✅ COMPLETE
+12. **Remember Device:** 30-day trusted device for 2FA (planned v5.8.0)
+13. **PDF Export:** Proper PDF formatting for session results (future)
 
 ### Testing Priorities
 - Mobile browser testing (iOS Safari, Chrome Mobile, Firefox Mobile)
@@ -660,6 +694,7 @@ Add notification to presenter when all connected players have answered the curre
 - **v5.4.0-5.4.4 (Released):** Auto-Mode Timer System, Solo Play Mode, quiz visibility controls, bug fixes ✅
 - **v5.5.0 (Released):** Backend performance optimizations, Session Health monitoring, rate limiting, presenter layout improvements ✅
 - **v5.6.0 (Released):** Game Experience & Results Display - progress counter, results podium, quiz completion screen, multiple displays, manual auto-complete, bug fixes ✅
+- **v5.7.0 (Released):** Admin-configurable Server URL for QR codes, player auth redirect fix ✅
 
 ---
 
@@ -678,5 +713,5 @@ Before marking a task as complete:
 
 **Archive:** See [archive/TODO-2025.md](archive/TODO-2025.md) for historical tasks and completed features from 2025.
 
-**Last Updated:** 2026-02-18
+**Last Updated:** 2026-02-19
 **Maintained By:** TriviaForge Development Team

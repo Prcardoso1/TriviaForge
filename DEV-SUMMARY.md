@@ -1,25 +1,70 @@
 # TriviaForge Development Summary
 
 > **Purpose:** Summary of development changes for the current session
-> **Last Updated:** 2026-02-18
-> **Version:** v5.6.0
+> **Last Updated:** 2026-02-19
+> **Version:** v5.7.0
 
 ---
 
-## Session Summary: v5.6.0 Release
+## Session Summary: v5.7.0 Release
 
 ### Overview
 
-This development period covered game experience and results display enhancements informed by live beta testing with 6-7 users across two 40-question games:
-1. **v5.6.0** - Question progress counter on Player, Display, and Presenter pages
-2. **v5.6.0** - End-of-game results podium with gold/silver/bronze and per-quiz toggle
-3. **v5.6.0** - Quiz completion screen for ALL quizzes with countdown transition
-4. **v5.6.0** - Multiple simultaneous Display/Spectator connections per room
-5. **v5.6.0** - Shuffle All Choices bug fix (skip True/False questions)
-6. **v5.6.0** - Heartbeat false positive fix (browser tab throttling threshold)
-7. **v5.6.0** - Stale room rejoin cleanup
-8. **v5.6.0** - Auto-pilot state reset on room change
-9. **v5.6.0** - Manual mode auto-complete when all questions revealed
+This development period covered server configuration improvements and a player auth bug fix:
+1. **v5.7.0** - Admin-configurable Server URL for QR codes (no container rebuild needed)
+2. **v5.7.0** - Player auth verify-player 401 redirect fix
+
+---
+
+## v5.7.0 - Admin-Configurable Server URL
+
+**Release Date:** 2026-02-19
+**Branch:** `server-url-tweaks-v5.7.0`
+
+### Features
+
+#### Admin Server URL Setting
+- New "Server Settings" panel in Admin > Settings tab
+- Displays auto-detected server IP and active QR code URL
+- Custom Server URL input field with save/clear buttons
+- URL priority chain: DB setting > SERVER_URL env var > HOST_IP env var > auto-detected IP
+- Changes take effect immediately for new QR codes without container restart
+- URL validation ensures valid format before saving
+
+#### Dynamic QR Code URL Resolution
+- Replaced static `SERVER_URL` constant with dynamic `getServerUrl()` function
+- QR code URLs now resolved per-request instead of at server startup
+- `loadQuizOptions()` expanded to load `server_url` from `app_settings` table
+- GET/POST `/api/options` endpoints updated to include `serverUrl`, `detectedIp`, and `activeServerUrl`
+
+### Bug Fixes
+
+#### Player Auth Redirect Fix
+- **Problem:** Registered players with expired tokens were redirected to landing page instead of the player join screen when scanning QR codes
+- **Root Cause:** The `useApi` 401 interceptor didn't exclude `verify-player` requests, so expired player tokens triggered `authStore.logout()` + redirect to `/`
+- **Fix:** Added `verify-player` to the player auth request exclusion list in `useApi.js`, allowing the PlayerPage's catch block to handle the 401 gracefully (clears stale token, shows join screen)
+
+### Database Migration
+
+**New migration:** `15-server-url-setting.sql`
+```sql
+INSERT INTO app_settings (setting_key, setting_value, description)
+VALUES ('server_url', '', 'Server URL for QR codes (leave empty to auto-detect from IP)')
+ON CONFLICT (setting_key) DO NOTHING;
+```
+
+### Files Created
+- `app/init/15-server-url-setting.sql` - Database migration for server_url setting
+- `app/src/components/admin/ServerSettingsPanel.vue` - Server Settings panel component
+
+### Files Modified
+- `app/server.js` - `getServerUrl()` function, dynamic URL resolution, updated loadQuizOptions/GET/POST options endpoints, QR endpoints
+- `app/src/composables/useApi.js` - Added verify-player to 401 exclusion list
+- `app/src/pages/AdminPage.vue` - Import and add ServerSettingsPanel to Settings tab
+- `app/src/config/version.js` - Bumped to v5.7.0
+- `docker-compose.yml` - Updated SERVER_URL default to empty, added comment
+- `.env.example` - Updated SERVER_URL comments (Admin UI recommended)
+- `.gitignore` - Added archive/Session Logs/
 
 ---
 

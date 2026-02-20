@@ -2,7 +2,7 @@
 
 A production-ready, real-time interactive trivia game platform built with **Vue 3**, **Socket.IO**, and **PostgreSQL**. Designed for educators, event organizers, and trivia enthusiasts with robust connection stability, persistent player sessions, and estimated capacity for 50+ concurrent players.
 
-**Latest Release**: v5.6.0 - Game Experience & Results Display, Progress Counter, Multiple Displays, Auto-Mode, Solo Play, Question Bank
+**Latest Release**: v5.7.0 - Admin-Configurable Server URL, Game Experience & Results Display, Progress Counter, Multiple Displays, Auto-Mode, Solo Play, Question Bank
 
 ### Key Highlights
 
@@ -44,6 +44,7 @@ A production-ready, real-time interactive trivia game platform built with **Vue 
 - **Admin Management** (Root Admin): Create/delete admin accounts, reset admin passwords
 - **Account Settings**: Update email and password from any admin page
 - **Session Health Monitoring**: View memory usage, active sessions, and live room statistics in real-time
+- **Server Settings**: Configure the server URL for QR codes directly from the admin panel (no container rebuild needed)
 
 <!-- Screenshot Placeholder: Admin Dashboard -->
 ![Admin Dashboard](screenshots/admin-dashboard.png?v=202602)
@@ -265,8 +266,8 @@ A production-ready, real-time interactive trivia game platform built with **Vue 
    # REQUIRED: Set your admin password (login won't work without this!)
    ADMIN_PASSWORD=your_secure_password_here
 
-   # REQUIRED: Set your server IP for QR codes to work
-   SERVER_URL=http://192.168.1.100:3000  # Replace with YOUR actual IP
+   # Optional: Server URL for QR codes (can also be set in Admin > Settings tab)
+   # SERVER_URL=http://192.168.1.100:3000
 
    # Optional: Set your host IP (helps with network detection)
    HOST_IP=192.168.1.100  # Replace with YOUR actual IP
@@ -276,7 +277,7 @@ A production-ready, real-time interactive trivia game platform built with **Vue 
    - **Windows**: Run `ipconfig` in Command Prompt (look for IPv4 Address)
    - **Mac/Linux**: Run `ifconfig` or `ip addr` in Terminal
 
-   **Do not proceed until you've set `ADMIN_PASSWORD` and `SERVER_URL` in your .env file!**
+   **Do not proceed until you've set `ADMIN_PASSWORD` in your .env file!**
 
 3. **Start the application**
    ```bash
@@ -626,7 +627,9 @@ TriviaForge/
 │   │   ├── 10-duplicate-detection.sql # Text hash for duplicates
 │   │   ├── 11-ignored-duplicate-pairs.sql # Ignored pairs
 │   │   ├── 12-auto-mode-solo-play.sql # Auto-mode & solo play
-│   │   └── 13-fix-solo-guest-participants.sql # Guest participant fix
+│   │   ├── 13-fix-solo-guest-participants.sql # Guest participant fix
+│   │   ├── 14-show-results-setting.sql    # Show results toggle
+│   │   └── 15-server-url-setting.sql      # Server URL setting
 │   ├── testing/          # Automated testing suite
 │   │   ├── README.md     # Testing suite overview
 │   │   ├── TESTING.md    # Complete testing guide
@@ -666,7 +669,7 @@ Environment variables can be set in multiple ways (listed by precedence, highest
 | `DATABASE_URL` | PostgreSQL connection string | `postgres://trivia:trivia@db:5432/trivia` | Yes (auto-configured in Docker) |
 | `ADMIN_PASSWORD` | Password to access admin panel | - | **Yes** |
 | `HOST_IP` | Server IP address for network access | Auto-detected | No |
-| `SERVER_URL` | Full server URL (overrides HOST_IP) | - | **Yes** (for QR codes) |
+| `SERVER_URL` | Server URL for QR codes (can also be set in Admin > Settings) | Auto-detected | No |
 | `SESSION_TIMEOUT` | Session expiration time (ms) | `3600000` (1 hour) | No |
 | `NODE_ENV` | Environment mode (`development` or `production`) | `production` | No |
 | `DEBUG_MODE` | Enable comprehensive debug logging (server-side) | `false` | No |
@@ -681,7 +684,7 @@ Environment variables can be set in multiple ways (listed by precedence, highest
 - **For Docker Desktop users:** Variables set in the UI will override `.env` file values
 - **For Docker Compose CLI users:** Create a `.env` file from `.env.example` and configure there
 - **`ADMIN_PASSWORD`** must be set before first run for admin login to work
-- **`SERVER_URL`** should be set to your server's accessible IP/hostname for QR code generation to work correctly
+- **`SERVER_URL`** can be set in your `.env` file OR configured in the Admin > Settings tab. The Admin UI setting takes priority over the environment variable
 
 ## Features in Detail
 
@@ -756,6 +759,12 @@ We welcome contributions from the community! Please read our [CONTRIBUTING.md](C
 ## Roadmap
 
 ### Completed Features
+
+**v5.7.0 (Feb 2026) - Admin-Configurable Server URL**
+- [x] Server Settings panel in Admin > Settings tab for configuring QR code URLs
+- [x] Dynamic URL resolution: DB setting takes priority over env var over auto-detected IP
+- [x] No container rebuild needed - changes take effect immediately for new QR codes
+- [x] Fixed player auth redirect bug for expired tokens scanning QR codes
 
 **v5.5.0 (Feb 2026) - Backend Performance & Session Health**
 - [x] Backend Performance Optimizations - Memory cleanup scheduler, Socket.IO rate limiting, room activity tracking
