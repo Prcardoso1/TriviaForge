@@ -1,7 +1,7 @@
 <template>
   <div class="login-container">
     <div class="login-box">
-      <h1 class="login-title"><AppIcon name="gamepad-2" size="2xl" /> Trivia Forge</h1>
+      <h1 class="login-title"><AppIcon name="gamepad-2" size="2xl" /> Unimar-Quiz</h1>
       <p class="login-subtitle">Admin & Presenter Access</p>
 
       <!-- Login Form -->
