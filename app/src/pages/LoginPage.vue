@@ -171,6 +171,7 @@ import { useTheme } from '@/composables/useTheme.js'
 import Button from '@/components/common/Button.vue'
 import FormInput from '@/components/common/FormInput.vue'
 import AppIcon from '@/components/common/AppIcon.vue'
+import unimarLogo from '@/assets/unimar.png'
 
 const router = useRouter()
 const authStore = useAuthStore()
@@ -351,6 +352,14 @@ const performLogout = async () => {
 </script>
 
 <style scoped>
+  .unimar-logo{
+  width:180px;
+  margin-bottom:18px;
+  display:block;
+  margin-left:auto;
+  margin-right:auto;
+  filter: drop-shadow(0 6px 14px rgba(0,0,0,0.35));
+}
 .login-container {
   position: relative;
   overflow: hidden;
