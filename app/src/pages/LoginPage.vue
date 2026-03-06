@@ -5,10 +5,20 @@
 
     <div class="login-box">
       <div class="brand-area">
-        <div class="brand-badge">UNIMAR</div>
-        <h1 class="login-title">UNIMAR Quiz</h1>
-        <p class="login-subtitle">Ambiente interativo para aulas, apresentações e atividades</p>
-      </div>
+
+  <img
+    :src="unimarLogo"
+    alt="Universidade de Marília"
+    class="unimar-logo"
+  />
+
+  <h1 class="login-title">UNIMAR Quiz</h1>
+
+  <p class="login-subtitle">
+    Plataforma interativa para aulas e atividades acadêmicas
+  </p>
+
+</div>
 
       <!-- Formulário de login -->
       <div v-if="!isLoggedIn && !requires2FA" class="login-form">
