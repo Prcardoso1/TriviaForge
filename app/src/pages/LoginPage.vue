@@ -1,25 +1,31 @@
 <template>
   <div class="login-container">
-    <div class="login-box">
-      <h1 class="login-title">UNIMAR Quiz</h1>
-      <p class="login-subtitle">Admin & Presenter Access</p>
+    <div class="login-background-glow login-background-glow-1"></div>
+    <div class="login-background-glow login-background-glow-2"></div>
 
-      <!-- Login Form -->
+    <div class="login-box">
+      <div class="brand-area">
+        <div class="brand-badge">UNIMAR</div>
+        <h1 class="login-title">UNIMAR Quiz</h1>
+        <p class="login-subtitle">Ambiente interativo para aulas, apresentações e atividades</p>
+      </div>
+
+      <!-- Formulário de login -->
       <div v-if="!isLoggedIn && !requires2FA" class="login-form">
         <FormInput
           v-model="username"
-          label="Username"
+          label="Usuário"
           type="text"
-          placeholder="username"
+          placeholder="Digite seu usuário"
           :error="error"
           @keypress.enter="attemptLogin"
         />
 
         <FormInput
           v-model="password"
-          label="Password"
+          label="Senha"
           type="password"
-          placeholder="••••••••"
+          placeholder="Digite sua senha"
           @keypress.enter="attemptLogin"
         />
 
@@ -28,20 +34,20 @@
           full-width
           @click="attemptLogin"
         >
-          Login
+          Entrar
         </Button>
       </div>
 
-      <!-- 2FA Verification Form -->
+      <!-- Formulário de verificação em duas etapas -->
       <div v-else-if="requires2FA" class="two-factor-form">
         <div class="totp-header">
-          <h3>Two-Factor Authentication</h3>
-          <p>Enter the 6-digit code from your authenticator app</p>
+          <h3>Verificação em duas etapas</h3>
+          <p>Digite o código de 6 dígitos do seu aplicativo autenticador</p>
         </div>
 
         <FormInput
           v-model="totpCode"
-          label="Verification Code"
+          label="Código de verificação"
           type="text"
           placeholder="000000"
           maxlength="6"
@@ -57,7 +63,7 @@
           full-width
           @click="verifyTOTP"
         >
-          Verify
+          Verificar código
         </Button>
 
         <div class="totp-options">
@@ -66,14 +72,14 @@
             class="link-button"
             @click="showBackupCodeInput = !showBackupCodeInput"
           >
-            {{ showBackupCodeInput ? 'Use authenticator app' : 'Use backup code instead' }}
+            {{ showBackupCodeInput ? 'Usar aplicativo autenticador' : 'Usar código de recuperação' }}
           </button>
         </div>
 
         <div v-if="showBackupCodeInput" class="backup-code-section">
           <FormInput
             v-model="backupCode"
-            label="Backup Code"
+            label="Código de recuperação"
             type="text"
             placeholder="XXXX-XXXX"
             maxlength="9"
@@ -86,30 +92,36 @@
             variant="secondary"
             @click="verifyBackupCode"
           >
-            Use Backup Code
+            Usar código de recuperação
           </Button>
         </div>
 
         <button type="button" class="link-button cancel-link" @click="cancelTwoFactor">
-          Cancel and start over
+          Cancelar e voltar ao início
         </button>
       </div>
 
-      <!-- Access Buttons (After Login) -->
+      <!-- Acessos após login -->
       <div v-else class="access-buttons">
-        <h3 class="success-message"><AppIcon name="check" size="lg" /> Access Granted</h3>
+        <h3 class="success-message">
+          <AppIcon name="check" size="lg" />
+          Acesso liberado
+        </h3>
 
         <div class="button-group">
           <RouterLink to="/admin" class="access-link admin-link">
-            <AppIcon name="clipboard-list" size="lg" /> Admin Panel - Manage Quizzes
+            <AppIcon name="clipboard-list" size="lg" />
+            Painel administrativo - Gerenciar quizzes
           </RouterLink>
 
           <RouterLink to="/presenter" class="access-link presenter-link">
-            <AppIcon name="presentation" size="lg" /> Presenter - Host Game
+            <AppIcon name="presentation" size="lg" />
+            Apresentador - Conduzir atividade
           </RouterLink>
 
           <RouterLink to="/display" class="access-link display-link">
-            <AppIcon name="monitor" size="lg" /> Display Screen - For Audience
+            <AppIcon name="monitor" size="lg" />
+            Tela de exibição - Público / projetor
           </RouterLink>
         </div>
 
@@ -118,7 +130,7 @@
           full-width
           @click="performLogout"
         >
-          Logout
+          Sair
         </Button>
       </div>
 
@@ -126,11 +138,13 @@
 
       <div class="public-links">
         <RouterLink to="/player" class="player-link">
-          <AppIcon name="users" size="lg" /> Join as Player
+          <AppIcon name="users" size="lg" />
+          Entrar como aluno
         </RouterLink>
 
         <RouterLink to="/solo" class="solo-link">
-          <AppIcon name="user" size="lg" /> Solo Practice
+          <AppIcon name="user" size="lg" />
+          Prática individual
         </RouterLink>
       </div>
     </div>
@@ -153,7 +167,6 @@ const authStore = useAuthStore()
 const uiStore = useUIStore()
 const { get, post } = useApi()
 
-// Initialize theme for LoginPage (dark theme default)
 const { initTheme } = useTheme('LOGIN')
 initTheme()
 
@@ -163,7 +176,7 @@ const error = ref(null)
 const isLoading = ref(false)
 const isLoggedIn = ref(false)
 
-// Two-Factor Authentication state
+// Estado da autenticação em duas etapas
 const requires2FA = ref(false)
 const tempToken = ref(null)
 const pendingUser = ref(null)
@@ -173,12 +186,11 @@ const isVerifying = ref(false)
 const showBackupCodeInput = ref(false)
 const backupCode = ref('')
 
-// Check if already authenticated
+// Verifica se já está autenticado
 onMounted(async () => {
   if (authStore.token && authStore.userRole === 'admin') {
     isLoggedIn.value = true
   } else {
-    // Clear any stale auth
     authStore.logout()
   }
 })
@@ -187,7 +199,7 @@ const attemptLogin = async () => {
   error.value = null
 
   if (!username.value.trim() || !password.value.trim()) {
-    error.value = 'Please enter username and password'
+    error.value = 'Por favor, informe usuário e senha'
     return
   }
 
@@ -201,32 +213,27 @@ const attemptLogin = async () => {
 
     const data = response.data
 
-    // Check if 2FA is required
     if (data.requires2FA) {
       requires2FA.value = true
       tempToken.value = data.tempToken
       pendingUser.value = data.user
-      password.value = '' // Clear password for security
-      isLoading.value = false
-      return
-    }
-
-    // Check if user is admin
-    if (data.user?.account_type !== 'admin') {
-      error.value = 'Admin access required'
       password.value = ''
       isLoading.value = false
       return
     }
 
-    // Complete login
+    if (data.user?.account_type !== 'admin') {
+      error.value = 'É necessário ter acesso de administrador'
+      password.value = ''
+      isLoading.value = false
+      return
+    }
+
     await completeLogin(data)
   } catch (err) {
-    const message = err.response?.data?.message || 'Invalid credentials'
+    const message = err.response?.data?.message || 'Usuário ou senha inválidos'
     error.value = message
     password.value = ''
-
-    // Show error notification
     uiStore.addNotification(message, 'error')
   } finally {
     isLoading.value = false
@@ -249,7 +256,7 @@ const verifyTOTP = async () => {
     await completeLogin(response.data)
     resetTwoFactorState()
   } catch (err) {
-    totpError.value = err.response?.data?.message || 'Invalid verification code'
+    totpError.value = err.response?.data?.message || 'Código de verificação inválido'
     totpCode.value = ''
   } finally {
     isVerifying.value = false
@@ -272,7 +279,7 @@ const verifyBackupCode = async () => {
     await completeLogin(response.data)
     resetTwoFactorState()
   } catch (err) {
-    totpError.value = err.response?.data?.message || 'Invalid backup code'
+    totpError.value = err.response?.data?.message || 'Código de recuperação inválido'
     backupCode.value = ''
   } finally {
     isVerifying.value = false
@@ -280,22 +287,19 @@ const verifyBackupCode = async () => {
 }
 
 const completeLogin = async (data) => {
-  // Store auth with user ID
   authStore.setAuth(data.token, data.user.username, 'admin', data.user.id)
   isLoggedIn.value = true
 
-  // Fetch admin info to check if root admin
   try {
     const adminInfoResponse = await get('/api/auth/admin-info')
     if (adminInfoResponse.data?.user?.is_root_admin) {
       authStore.setAuth(data.token, data.user.username, 'admin', data.user.id, true)
     }
   } catch (adminErr) {
-    console.warn('Could not fetch admin info:', adminErr)
+    console.warn('Não foi possível carregar os dados do administrador:', adminErr)
   }
 
-  // Show success notification
-  uiStore.addNotification(`Welcome back, ${data.user.username}!`, 'success')
+  uiStore.addNotification(`Bem-vindo novamente, ${data.user.username}!`, 'success')
 }
 
 const cancelTwoFactor = () => {
@@ -317,226 +321,285 @@ const performLogout = async () => {
   isLoading.value = true
 
   try {
-    // Notify server of logout (optional)
     if (authStore.token) {
       try {
         await post('/api/auth/logout', {})
       } catch (err) {
-        console.error('Logout notification failed:', err)
+        console.error('Falha ao notificar logout:', err)
       }
     }
   } finally {
-    // Clear local auth
     authStore.logout()
     isLoggedIn.value = false
     username.value = 'admin'
     password.value = ''
     isLoading.value = false
 
-    // Show notification
-    uiStore.addNotification('Logged out successfully', 'info')
+    uiStore.addNotification('Saída realizada com sucesso', 'info')
   }
 }
 </script>
 
 <style scoped>
 .login-container {
+  position: relative;
+  overflow: hidden;
   display: flex;
   align-items: center;
   justify-content: center;
   min-height: 100vh;
-  background: var(--bg-primary);
-  padding: var(--spacing-md);
-  position: relative;
+  padding: 24px;
+  background:
+    radial-gradient(circle at top left, rgba(34, 84, 160, 0.30), transparent 28%),
+    radial-gradient(circle at bottom right, rgba(27, 108, 187, 0.24), transparent 32%),
+    linear-gradient(135deg, #07152b 0%, #0b2347 45%, #103164 100%);
   z-index: 100;
 }
 
+.login-background-glow {
+  position: absolute;
+  border-radius: 50%;
+  filter: blur(80px);
+  opacity: 0.35;
+  pointer-events: none;
+}
+
+.login-background-glow-1 {
+  width: 280px;
+  height: 280px;
+  background: #1a63c7;
+  top: -50px;
+  left: -40px;
+}
+
+.login-background-glow-2 {
+  width: 320px;
+  height: 320px;
+  background: #0ea5e9;
+  right: -80px;
+  bottom: -90px;
+}
+
 .login-box {
-  background: var(--bg-overlay-10);
-  backdrop-filter: blur(10px);
-  padding: 3rem;
-  border-radius: 20px;
-  max-width: 500px;
+  position: relative;
+  z-index: 2;
   width: 100%;
-  box-shadow: var(--shadow-xl);
-  border: 1px solid var(--border-color);
+  max-width: 520px;
+  padding: 40px 36px;
+  border-radius: 24px;
+  background: rgba(8, 20, 43, 0.74);
+  border: 1px solid rgba(255, 255, 255, 0.10);
+  box-shadow:
+    0 20px 60px rgba(0, 0, 0, 0.38),
+    inset 0 1px 0 rgba(255, 255, 255, 0.06);
+  backdrop-filter: blur(14px);
+}
+
+.brand-area {
+  text-align: center;
+  margin-bottom: 28px;
+}
+
+.brand-badge {
+  display: inline-block;
+  margin-bottom: 14px;
+  padding: 6px 14px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.10);
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  color: #dbeafe;
+  font-size: 0.78rem;
+  font-weight: 700;
+  letter-spacing: 0.12em;
 }
 
 .login-title {
-  margin: 0 0 0.5rem 0;
-  font-size: 2.5rem;
+  margin: 0 0 10px 0;
+  font-size: 2.45rem;
+  line-height: 1.1;
+  font-weight: 800;
   text-align: center;
-  color: var(--text-primary);
+  color: #ffffff;
 }
 
 .login-subtitle {
-  color: var(--text-tertiary);
-  margin-bottom: 2rem;
+  margin: 0;
   text-align: center;
-  font-size: var(--font-base);
+  color: #cbd5e1;
+  font-size: 0.98rem;
+  line-height: 1.5;
 }
 
 .login-form,
 .two-factor-form {
   display: flex;
   flex-direction: column;
-  gap: var(--spacing-lg);
+  gap: 18px;
 }
 
 .totp-header {
   text-align: center;
-  margin-bottom: 0.5rem;
+  margin-bottom: 4px;
 }
 
 .totp-header h3 {
-  color: var(--info-light);
-  margin: 0 0 0.5rem 0;
-  font-size: 1.25rem;
+  color: #ffffff;
+  margin: 0 0 8px 0;
+  font-size: 1.24rem;
 }
 
 .totp-header p {
-  color: var(--text-tertiary);
+  color: #cbd5e1;
   margin: 0;
-  font-size: 0.9rem;
+  font-size: 0.92rem;
+  line-height: 1.5;
 }
 
 .totp-options {
   text-align: center;
-  margin-top: -0.5rem;
+  margin-top: -4px;
 }
 
 .link-button {
   background: none;
   border: none;
-  color: var(--info-light);
+  color: #7dd3fc;
   cursor: pointer;
-  text-decoration: underline;
-  font-size: 0.9rem;
-  padding: 0.5rem;
+  text-decoration: none;
+  font-size: 0.92rem;
+  padding: 8px;
+  transition: color 0.2s ease, opacity 0.2s ease;
 }
 
 .link-button:hover {
-  color: var(--text-primary);
+  color: #ffffff;
 }
 
 .cancel-link {
-  color: var(--text-tertiary);
-  margin-top: 0.5rem;
+  color: #cbd5e1;
+  margin-top: 6px;
 }
 
 .backup-code-section {
   display: flex;
   flex-direction: column;
-  gap: 1rem;
-  padding: 1rem;
-  background: var(--bg-overlay-10);
-  border-radius: 8px;
-  border: 1px solid var(--border-color);
+  gap: 16px;
+  padding: 16px;
+  background: rgba(255, 255, 255, 0.06);
+  border-radius: 14px;
+  border: 1px solid rgba(255, 255, 255, 0.10);
 }
 
 .access-buttons {
   display: flex;
   flex-direction: column;
-  gap: var(--spacing-lg);
+  gap: 20px;
 }
 
 .success-message {
-  color: var(--secondary-light);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  color: #bbf7d0;
   text-align: center;
-  margin: 0 0 1.5rem 0;
-  font-size: var(--font-xl);
+  margin: 0 0 8px 0;
+  font-size: 1.3rem;
 }
 
 .button-group {
   display: flex;
   flex-direction: column;
-  gap: var(--spacing-md);
+  gap: 14px;
 }
 
 .access-link {
-  padding: 1rem;
-  border-radius: 10px;
-  color: var(--text-primary);
-  text-decoration: none;
-  font-weight: bold;
-  transition: all 0.2s;
-  text-align: center;
   display: block;
+  text-align: center;
+  text-decoration: none;
+  font-weight: 700;
+  padding: 16px 18px;
+  border-radius: 14px;
+  color: #f8fafc;
+  transition: transform 0.2s ease, box-shadow 0.2s ease, opacity 0.2s ease;
+}
+
+.access-link:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 12px 24px rgba(0, 0, 0, 0.22);
 }
 
 .admin-link {
-  background: var(--info-bg-30);
-  border: 2px solid var(--info-light);
-}
-
-.admin-link:hover {
-  background: var(--info-bg-50);
-  transform: translateY(-2px);
+  background: linear-gradient(135deg, rgba(30, 64, 175, 0.9), rgba(37, 99, 235, 0.9));
+  border: 1px solid rgba(147, 197, 253, 0.35);
 }
 
 .presenter-link {
-  background: var(--secondary-bg-30);
-  border: 2px solid var(--secondary-light);
-}
-
-.presenter-link:hover {
-  background: var(--secondary-bg-50);
-  transform: translateY(-2px);
+  background: linear-gradient(135deg, rgba(10, 80, 153, 0.92), rgba(14, 116, 144, 0.92));
+  border: 1px solid rgba(125, 211, 252, 0.35);
 }
 
 .display-link {
-  background: var(--warning-bg-30);
-  border: 2px solid var(--warning-light);
-}
-
-.display-link:hover {
-  background: var(--warning-bg-50);
-  transform: translateY(-2px);
+  background: linear-gradient(135deg, rgba(8, 47, 73, 0.95), rgba(3, 105, 161, 0.92));
+  border: 1px solid rgba(103, 232, 249, 0.28);
 }
 
 .divider {
-  margin: 2rem 0;
+  margin: 28px 0 22px;
   border: none;
-  border-top: 1px solid var(--border-color);
+  border-top: 1px solid rgba(255, 255, 255, 0.10);
 }
 
 .public-links {
   display: flex;
-  gap: 1rem;
+  gap: 14px;
   justify-content: center;
 }
 
 .player-link,
 .solo-link {
-  display: inline-block;
-  padding: 0.75rem 1.5rem;
-  background: var(--bg-overlay-10);
-  border-radius: 8px;
-  color: var(--text-primary);
+  flex: 1;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  min-height: 54px;
+  padding: 12px 16px;
+  border-radius: 14px;
+  color: #f8fafc;
   text-decoration: none;
-  transition: all 0.2s;
   text-align: center;
+  transition: transform 0.2s ease, background 0.2s ease, border-color 0.2s ease;
 }
 
-.player-link:hover,
-.solo-link:hover {
-  background: var(--bg-overlay-20);
+.player-link {
+  background: rgba(255, 255, 255, 0.08);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+}
+
+.player-link:hover {
+  background: rgba(255, 255, 255, 0.14);
   transform: translateY(-2px);
 }
 
 .solo-link {
-  background: var(--primary-bg-30);
-  border: 1px solid var(--primary-light);
+  background: rgba(37, 99, 235, 0.22);
+  border: 1px solid rgba(96, 165, 250, 0.38);
 }
 
 .solo-link:hover {
-  background: var(--primary-bg-50);
+  background: rgba(37, 99, 235, 0.34);
+  transform: translateY(-2px);
 }
 
 @media (max-width: 640px) {
+  .login-container {
+    padding: 16px;
+  }
+
   .login-box {
-    padding: 2rem;
-    border-radius: 15px;
+    padding: 28px 22px;
+    border-radius: 20px;
   }
 
   .login-title {
@@ -544,7 +607,11 @@ const performLogout = async () => {
   }
 
   .login-subtitle {
-    font-size: var(--font-sm);
+    font-size: 0.92rem;
+  }
+
+  .public-links {
+    flex-direction: column;
   }
 }
 </style>
