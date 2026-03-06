@@ -433,14 +433,15 @@ const performLogout = async () => {
 }
 
 .login-title {
-  margin: 0 0 10px 0;
-  font-size: 2.45rem;
+  margin: 0 0 8px 0;
+  font-size: 1.6rem;
   line-height: 1.1;
-  font-weight: 800;
+  font-weight: 400;
   text-align: center;
-  color: #ffffff;
+  color: #e2e8f0;
+  letter-spacing: 0.05em;
 }
-
+  
 .login-subtitle {
   margin: 0;
   text-align: center;
