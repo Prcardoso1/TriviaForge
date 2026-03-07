@@ -3,119 +3,158 @@
     :isOpen="isOpen"
     @close="$emit('close')"
     size="large"
-    title="Your Progress"
+    title="Seu progresso"
   >
     <template #default>
       <div class="progress-content">
-        <!-- Stats Summary -->
+
+        <!-- Estatísticas -->
         <div v-if="presentedQuestions.length > 0" class="progress-stats">
           <div class="stat-card correct">
             <div class="stat-value">{{ correctCount }}</div>
-            <div class="stat-label">Correct</div>
+            <div class="stat-label">Corretas</div>
           </div>
+
           <div class="stat-card incorrect">
             <div class="stat-value">{{ incorrectCount }}</div>
-            <div class="stat-label">Incorrect</div>
+            <div class="stat-label">Incorretas</div>
           </div>
+
           <div class="stat-card">
             <div class="stat-value">{{ accuracy }}%</div>
-            <div class="stat-label">Accuracy</div>
+            <div class="stat-label">Precisão</div>
           </div>
+
           <div class="stat-card answered">
             <div class="stat-value">{{ answeredCount }}</div>
-            <div class="stat-label">Answered</div>
+            <div class="stat-label">Respondidas</div>
           </div>
         </div>
 
-        <!-- Question History -->
+        <!-- Histórico das perguntas -->
         <div v-if="presentedQuestions.length > 0" class="question-history">
-          <h4>Question History</h4>
+          <h4>Histórico de questões</h4>
+
           <div
             v-for="(q, idx) in presentedQuestions"
             :key="q.index"
             class="history-item"
             :class="getQuestionStatusClass(q)"
           >
+
             <div class="history-content">
-              <div class="history-question">Q{{ q.index + 1 }}. {{ q.text }}</div>
+
+              <div class="history-question">
+                Pergunta {{ q.index + 1 }}. {{ q.text }}
+              </div>
+
               <div v-if="q.imageUrl" class="history-image">
-                <img :src="q.imageUrl" alt="Question image" @error="handleImageError" />
+                <img :src="q.imageUrl" alt="Imagem da pergunta" @error="handleImageError" />
               </div>
+
               <div class="history-answer">
-                <strong class="answer-label">Your answer:</strong>
-                {{ q.playerChoice !== null ? `${String.fromCharCode(65 + q.playerChoice)}. ${q.choices[q.playerChoice]}` : 'No answer submitted' }}
+                <strong class="answer-label">Sua resposta:</strong>
+
+                {{
+                  q.playerChoice !== null
+                    ? `${String.fromCharCode(65 + q.playerChoice)}. ${q.choices[q.playerChoice]}`
+                    : 'Nenhuma resposta enviada'
+                }}
               </div>
+
               <div v-if="q.revealed" class="history-correct">
-                <strong class="correct-label">Correct answer:</strong>
-                {{ `${String.fromCharCode(65 + q.correctChoice)}. ${q.choices[q.correctChoice]}` }}
+                <strong class="correct-label">Resposta correta:</strong>
+
+                {{
+                  `${String.fromCharCode(65 + q.correctChoice)}. ${q.choices[q.correctChoice]}`
+                }}
               </div>
+
             </div>
+
             <div class="history-status" :class="getQuestionStatusClass(q)">
               <AppIcon :name="getQuestionStatusIcon(q)" size="xl" class="status-icon" />
               <div class="status-text">{{ getQuestionStatusText(q) }}</div>
             </div>
+
           </div>
         </div>
 
-        <!-- Empty State -->
+        <!-- Estado vazio -->
         <div v-else class="progress-empty">
           <AppIcon name="clipboard-list" size="2xl" class="empty-icon" />
-          <p>No questions answered yet!</p>
-          <p class="empty-hint">Your progress will appear here once the presenter starts the quiz.</p>
+          <p>Ainda não há perguntas respondidas.</p>
+          <p class="empty-hint">
+            Seu progresso aparecerá aqui quando o apresentador iniciar o quiz.
+          </p>
         </div>
+
       </div>
     </template>
   </Modal>
 </template>
 
 <script setup>
-import { computed } from 'vue';
-import Modal from '@/components/common/Modal.vue';
-import AppIcon from '@/components/common/AppIcon.vue';
+import { computed } from 'vue'
+import Modal from '@/components/common/Modal.vue'
+import AppIcon from '@/components/common/AppIcon.vue'
 
 const props = defineProps({
   isOpen: { type: Boolean, required: true },
   questionHistory: { type: Array, required: true }
-});
+})
 
-defineEmits(['close']);
+defineEmits(['close'])
 
-// Computed properties for progress statistics
-const presentedQuestions = computed(() => props.questionHistory.filter(q => q.presented));
-const correctCount = computed(() => presentedQuestions.value.filter(q => q.revealed && q.isCorrect).length);
-const incorrectCount = computed(() => presentedQuestions.value.filter(q => q.revealed && !q.isCorrect).length);
-const answeredCount = computed(() => presentedQuestions.value.filter(q => q.revealed).length);
-const accuracy = computed(() => answeredCount.value > 0 ? ((correctCount.value / answeredCount.value) * 100).toFixed(1) : '0.0');
+const presentedQuestions = computed(() =>
+  props.questionHistory.filter(q => q.presented)
+)
 
-// Helper functions for question status display
+const correctCount = computed(() =>
+  presentedQuestions.value.filter(q => q.revealed && q.isCorrect).length
+)
+
+const incorrectCount = computed(() =>
+  presentedQuestions.value.filter(q => q.revealed && !q.isCorrect).length
+)
+
+const answeredCount = computed(() =>
+  presentedQuestions.value.filter(q => q.revealed).length
+)
+
+const accuracy = computed(() =>
+  answeredCount.value > 0
+    ? ((correctCount.value / answeredCount.value) * 100).toFixed(1)
+    : '0.0'
+)
+
 const getQuestionStatusClass = (q) => {
-  if (q.missedWhileAway && q.revealed) return 'missed-away';
-  if (q.revealed && q.isCorrect) return 'correct';
-  if (q.revealed && !q.isCorrect) return 'incorrect';
-  if (q.playerChoice !== null) return 'answered';
-  return 'unanswered';
-};
+  if (q.missedWhileAway && q.revealed) return 'missed-away'
+  if (q.revealed && q.isCorrect) return 'correct'
+  if (q.revealed && !q.isCorrect) return 'incorrect'
+  if (q.playerChoice !== null) return 'answered'
+  return 'unanswered'
+}
 
 const getQuestionStatusIcon = (q) => {
-  if (q.missedWhileAway && q.revealed) return 'alert-triangle';
-  if (q.revealed && q.isCorrect) return 'check';
-  if (q.revealed && !q.isCorrect) return 'x';
-  if (q.playerChoice !== null) return 'clock';
-  return 'circle';
-};
+  if (q.missedWhileAway && q.revealed) return 'alert-triangle'
+  if (q.revealed && q.isCorrect) return 'check'
+  if (q.revealed && !q.isCorrect) return 'x'
+  if (q.playerChoice !== null) return 'clock'
+  return 'circle'
+}
 
 const getQuestionStatusText = (q) => {
-  if (q.missedWhileAway && q.revealed) return 'Missed - Away';
-  if (q.revealed && q.isCorrect) return 'Correct';
-  if (q.revealed && !q.isCorrect) return 'Incorrect';
-  if (q.playerChoice !== null) return 'Waiting for reveal';
-  return 'Not answered';
-};
+  if (q.missedWhileAway && q.revealed) return 'Não respondeu (ausente)'
+  if (q.revealed && q.isCorrect) return 'Correta'
+  if (q.revealed && !q.isCorrect) return 'Incorreta'
+  if (q.playerChoice !== null) return 'Aguardando resultado'
+  return 'Não respondida'
+}
 
-// Handle broken images
 const handleImageError = (event) => {
-  event.target.style.display = 'none';
-};
+  event.target.style.display = 'none'
+}
 </script>
 
 <style scoped>
@@ -193,29 +232,7 @@ const handleImageError = (event) => {
   padding: 1rem;
   display: flex;
   justify-content: space-between;
-  align-items: flex-start;
   gap: 1rem;
-}
-
-.history-item.correct {
-  background: var(--secondary-bg-10);
-  border-color: var(--secondary-light);
-}
-
-.history-item.incorrect {
-  background: var(--danger-bg-10);
-  border-color: var(--danger-light);
-}
-
-.history-item.missed-away {
-  background: var(--bg-overlay-10);
-  border-color: var(--text-tertiary);
-  opacity: 0.7;
-}
-
-.history-item.answered {
-  background: var(--warning-bg-10);
-  border-color: var(--warning-light);
 }
 
 .history-content {
@@ -229,35 +246,15 @@ const handleImageError = (event) => {
   margin-bottom: 0.5rem;
 }
 
-.history-image {
-  margin: 0.5rem 0;
-  display: flex;
-  justify-content: flex-start;
-}
-
-.history-image img {
-  max-width: 150px;
-  max-height: 100px;
-  object-fit: contain;
-  border-radius: 6px;
-  background: var(--bg-overlay-10);
-}
-
-.history-answer {
+.history-answer,
+.history-correct {
   font-size: 0.85rem;
   color: var(--text-secondary);
-  line-height: 1.4;
-  margin-bottom: 0.5rem;
+  margin-top: 0.3rem;
 }
 
 .history-answer .answer-label {
   color: var(--info-light);
-}
-
-.history-correct {
-  font-size: 0.85rem;
-  color: var(--text-secondary);
-  line-height: 1.4;
 }
 
 .history-correct .correct-label {
@@ -268,28 +265,6 @@ const handleImageError = (event) => {
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 0.25rem;
-}
-
-.status-icon {
-  font-size: 2rem;
-  color: var(--info-light);
-}
-
-.history-item.correct .status-icon {
-  color: var(--secondary-light);
-}
-
-.history-item.incorrect .status-icon {
-  color: var(--danger-light);
-}
-
-.history-item.missed-away .status-icon {
-  color: var(--warning-light);
-}
-
-.history-item.answered .status-icon {
-  color: var(--warning-light);
 }
 
 .status-text {
@@ -301,11 +276,6 @@ const handleImageError = (event) => {
 .progress-empty {
   text-align: center;
   padding: 3rem 1rem;
-  color: var(--text-tertiary);
-}
-
-.empty-hint {
-  font-size: 0.9rem;
   color: var(--text-tertiary);
 }
 
