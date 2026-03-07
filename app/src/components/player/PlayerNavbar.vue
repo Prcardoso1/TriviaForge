@@ -1,14 +1,17 @@
 <template>
   <nav class="navbar">
-    <div class="logo"><span class="logo-full">TriviaForge Player</span><span class="logo-short">TF</span></div>
+    <div class="logo">
+      <span class="logo-full">UNIMAR Quiz - Jogador</span>
+      <span class="logo-short">UQ</span>
+    </div>
 
-    <!-- Progress button and question counter in navbar -->
+    <!-- Botão de progresso e contador de questões -->
     <div class="nav-progress-container">
       <span v-if="inRoom && totalQuestions > 0" class="question-counter">
         {{ revealedCount }} / {{ totalQuestions }}
       </span>
       <button v-if="inRoom" id="progressBtn" class="progress-btn" @click="$emit('showProgress')">
-        <AppIcon name="bar-chart-3" size="sm" /> Progress
+        <AppIcon name="bar-chart-3" size="sm" /> Progresso
       </button>
     </div>
 
@@ -21,12 +24,14 @@
 
     <div class="hamburger" @click="$emit('toggleMenu')">&#9776;</div>
     <ul class="menu" :class="{ open: menuOpen }">
-      <li><RouterLink to="/display">Spectate</RouterLink></li>
+      <li><RouterLink to="/display">Assistir</RouterLink></li>
+
       <li v-if="inRoom" id="menuLeaveRoom" class="mobile-only-menu-item">
-        <a href="#" @click.prevent="$emit('leaveRoom')">Leave Room</a>
+        <a href="#" @click.prevent="$emit('leaveRoom')">Sair da sala</a>
       </li>
+
       <li v-if="inRoom" id="menuPlayersSection" class="mobile-only-menu-item">
-        <div>Players in Room</div>
+        <div>Jogadores na sala</div>
         <div id="menuPlayersList" class="menu-players">
           <div v-for="(player, idx) in nonSpectatorPlayers" :key="player.id" class="player-item">
             <span>{{ idx + 1 }}.</span>
@@ -34,20 +39,21 @@
             <span>{{ player.name }}</span>
             <AppIcon v-if="player.choice !== null" name="check" size="sm" class="player-answered" />
           </div>
-          <em v-if="nonSpectatorPlayers.length === 0">Not in a room yet</em>
+          <em v-if="nonSpectatorPlayers.length === 0">Ainda não entrou em uma sala</em>
         </div>
       </li>
+
       <li v-if="loginUsername" class="logout-item">
-        <a href="#" @click.prevent="$emit('logout')" class="logout-link">Logout</a>
+        <a href="#" @click.prevent="$emit('logout')" class="logout-link">Sair</a>
       </li>
     </ul>
   </nav>
 </template>
 
 <script setup>
-import { RouterLink } from 'vue-router';
-import ThemeSelector from './ThemeSelector.vue';
-import AppIcon from '@/components/common/AppIcon.vue';
+import { RouterLink } from 'vue-router'
+import ThemeSelector from './ThemeSelector.vue'
+import AppIcon from '@/components/common/AppIcon.vue'
 
 defineProps({
   inRoom: { type: Boolean, required: true },
@@ -59,9 +65,9 @@ defineProps({
   loginUsername: { type: String, default: '' },
   revealedCount: { type: Number, default: 0 },
   totalQuestions: { type: Number, default: 0 }
-});
+})
 
-defineEmits(['showProgress', 'toggleMenu', 'leaveRoom', 'logout']);
+defineEmits(['showProgress', 'toggleMenu', 'leaveRoom', 'logout'])
 </script>
 
 <style scoped>
@@ -149,25 +155,25 @@ defineEmits(['showProgress', 'toggleMenu', 'leaveRoom', 'logout']);
   transition: color 0.2s;
 }
 
-/* Connection states */
+/* Estados de conexão */
 .nav-connection-status.status-connected,
 .status-connected {
-  color: var(--secondary-light); /* Green */
+  color: var(--secondary-light);
 }
 
 .nav-connection-status.status-away,
 .status-away {
-  color: var(--warning-light); /* Orange */
+  color: var(--warning-light);
 }
 
 .nav-connection-status.status-disconnected,
 .status-disconnected {
-  color: var(--danger-light); /* Red */
+  color: var(--danger-light);
 }
 
 .nav-connection-status.status-warning,
 .status-warning {
-  color: var(--warning-light); /* Yellow/Warning */
+  color: var(--warning-light);
   animation: pulse-warning 1.5s ease-in-out infinite;
 }
 
@@ -175,7 +181,6 @@ defineEmits(['showProgress', 'toggleMenu', 'leaveRoom', 'logout']);
   0%, 100% { opacity: 1; }
   50% { opacity: 0.5; }
 }
-
 
 .hamburger {
   display: none;
@@ -215,7 +220,6 @@ defineEmits(['showProgress', 'toggleMenu', 'leaveRoom', 'logout']);
   color: var(--danger-color);
 }
 
-/* Hide mobile-only menu items on desktop */
 @media (min-width: 1025px) {
   .mobile-only-menu-item {
     display: none !important;
@@ -228,7 +232,6 @@ defineEmits(['showProgress', 'toggleMenu', 'leaveRoom', 'logout']);
   margin-top: 0;
 }
 
-/* Show separator only on mobile */
 @media (max-width: 1024px) {
   .logout-item {
     border-top: 1px solid var(--border-color);
@@ -269,7 +272,7 @@ defineEmits(['showProgress', 'toggleMenu', 'leaveRoom', 'logout']);
   color: var(--secondary-light);
 }
 
-/* Mobile styles */
+/* Mobile */
 @media (max-width: 1024px) {
   .hamburger {
     display: block !important;
@@ -335,7 +338,6 @@ defineEmits(['showProgress', 'toggleMenu', 'leaveRoom', 'logout']);
     margin-bottom: 0.25rem;
   }
 
-  /* Leave Room button - red outline */
   #menuLeaveRoom a {
     border: 2px solid var(--danger-light);
     background: var(--danger-bg-10);
@@ -346,7 +348,6 @@ defineEmits(['showProgress', 'toggleMenu', 'leaveRoom', 'logout']);
     border-color: var(--danger-color);
   }
 
-  /* Logout button - red transparent background */
   .logout-item a {
     background: var(--danger-bg-20);
     border: 2px solid var(--danger-light);
