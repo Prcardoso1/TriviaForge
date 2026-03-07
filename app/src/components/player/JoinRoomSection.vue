@@ -1,49 +1,49 @@
 <template>
   <div class="join-section">
-    <h3>Join Room</h3>
+    <h3>Entrar na sala</h3>
 
-    <!-- Username Input or Display -->
+    <!-- Campo de usuário ou exibição do usuário salvo -->
     <div v-if="!savedUsername" class="username-input-section">
-      <label for="playerUsername">Username</label>
+      <label for="playerUsername">Usuário</label>
       <input
         id="playerUsername"
         :value="usernameInput"
         type="text"
-        placeholder="Choose a username"
+        placeholder="Escolha um nome de usuário"
         @input="$emit('update:usernameInput', $event.target.value)"
       />
-      <p class="form-hint">This will be your account name</p>
+      <p class="form-hint">Este será o nome da sua conta</p>
     </div>
 
     <div v-else class="username-display-section">
-      <label>Username (Account)</label>
+      <label>Usuário (Conta)</label>
       <div class="username-display">
         <div class="username-value">{{ savedUsername }}</div>
-        <button class="change-username-btn" @click="$emit('changeUsername')">Change</button>
+        <button class="change-username-btn" @click="$emit('changeUsername')">Alterar</button>
       </div>
     </div>
 
-    <label for="playerDisplayName">Display Name</label>
+    <label for="playerDisplayName">Nome exibido</label>
     <input
       id="playerDisplayName"
       :value="displayNameInput"
       type="text"
-      placeholder="Name shown in game"
+      placeholder="Nome exibido no jogo"
       @input="$emit('update:displayNameInput', $event.target.value)"
     />
-    <p class="form-hint">This is what other players will see</p>
+    <p class="form-hint">Este é o nome que os outros jogadores verão</p>
 
-    <label for="roomCodeManual">Room Code</label>
+    <label for="roomCodeManual">Código da sala</label>
     <input
       id="roomCodeManual"
       :value="roomCodeInput"
       type="text"
-      placeholder="Enter room code"
+      placeholder="Digite o código da sala"
       @input="$emit('update:roomCodeInput', $event.target.value)"
     />
 
-    <button class="btn-primary" @click="$emit('joinRoom')">Join Room</button>
-    <button class="btn-secondary" @click="$emit('manageAccount')">Manage Account</button>
+    <button class="btn-primary" @click="$emit('joinRoom')">Entrar na sala</button>
+    <button class="btn-secondary" @click="$emit('manageAccount')">Gerenciar conta</button>
   </div>
 </template>
 
@@ -55,7 +55,14 @@ defineProps({
   roomCodeInput: { type: String, required: true }
 });
 
-defineEmits(['update:usernameInput', 'update:displayNameInput', 'update:roomCodeInput', 'changeUsername', 'joinRoom', 'manageAccount']);
+defineEmits([
+  'update:usernameInput',
+  'update:displayNameInput',
+  'update:roomCodeInput',
+  'changeUsername',
+  'joinRoom',
+  'manageAccount'
+]);
 </script>
 
 <style scoped>
