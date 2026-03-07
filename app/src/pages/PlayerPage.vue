@@ -19,26 +19,26 @@
 
     <!-- Main Content -->
     <div class="player-container">
-      <!-- Connection Lost Banner -->
+      <!-- Banner de conexão perdida -->
       <div v-if="showConnectionLostBanner" class="connection-lost-banner">
         <div class="banner-content">
           <AppIcon name="alert-triangle" size="lg" class="icon" />
           <div class="text">
-            <strong>Connection Lost</strong>
-            <p>Attempting to reconnect... ({{ reconnectionAttempts }} attempt{{ reconnectionAttempts !== 1 ? 's' : '' }})</p>
+            <strong>Conexão perdida</strong>
+            <p>Tentando reconectar... ({{ reconnectionAttempts }} tentativa{{ reconnectionAttempts !== 1 ? 's' : '' }})</p>
           </div>
-          <Button @click="forceReconnect" variant="danger" size="small" class="reconnect-btn">Reconnect Now</Button>
+          <Button @click="forceReconnect" variant="danger" size="small" class="reconnect-btn">Reconectar agora</Button>
         </div>
       </div>
 
-      <!-- Missed Questions Banner -->
+      <!-- Banner de questões perdidas -->
       <div v-if="missedQuestionsBanner" class="missed-questions-banner">
-        <AppIcon name="alert-triangle" size="md" /> You have missed Questions while Away
+        <AppIcon name="alert-triangle" size="md" /> Você perdeu algumas questões enquanto estava ausente
       </div>
 
-      <!-- Left/Top: Question Display -->
+      <!-- Esquerda/Topo: Exibição da questão -->
       <div class="question-area">
-        <!-- End-of-Game Results Podium (v5.6.0) -->
+        <!-- Pódio de resultados finais -->
         <GameResults
           v-if="quizResultsData && !questionDisplaying"
           :players="quizResultsData.players"
@@ -46,19 +46,19 @@
           :classAverage="quizResultsData.classAverage"
         />
 
-        <!-- Quiz Complete Screen (v5.6.0) - shown for ALL quizzes on completion -->
+        <!-- Tela de quiz concluído -->
         <div v-else-if="quizCompleted && !questionDisplaying" class="quiz-complete-screen">
           <AppIcon name="check-circle" size="2xl" class="complete-icon" />
-          <h2 class="complete-title">Quiz Complete!</h2>
+          <h2 class="complete-title">Quiz concluído!</h2>
           <p v-if="resultsCountdown > 0" class="complete-subtitle">
-            Results in <span class="countdown-number">{{ resultsCountdown }}</span>...
+            Resultados em <span class="countdown-number">{{ resultsCountdown }}</span>...
           </p>
           <p v-else class="complete-subtitle">
-            Check your <strong>Progress</strong> to see how you did!
+            Consulte seu <strong>Progresso</strong> para ver seu desempenho!
           </p>
         </div>
 
-        <!-- Waiting Screen -->
+        <!-- Tela de espera -->
         <WaitingDisplay
           v-else-if="!questionDisplaying"
           :inRoom="inRoom"
@@ -66,7 +66,7 @@
           @quickJoin="quickJoinRoom"
         />
 
-        <!-- Question Display -->
+        <!-- Exibição da questão -->
         <QuestionDisplay
           v-else
           :currentQuestion="currentQuestion"
@@ -82,9 +82,9 @@
         />
       </div>
 
-      <!-- Right/Bottom: Room/Sidebar -->
+      <!-- Direita/Base: Sala / Barra lateral -->
       <div class="sidebar" :class="{ 'hidden-mobile-in-room': inRoom }">
-        <!-- Join Section -->
+        <!-- Área de entrada -->
         <JoinRoomSection
           v-if="!inRoom"
           :savedUsername="savedUsername"
@@ -96,7 +96,7 @@
           @manageAccount="handleManageAccount"
         />
 
-        <!-- Room Info -->
+        <!-- Informações da sala -->
         <RoomInfoSection
           v-else
           :currentRoomCode="currentRoomCode"
@@ -105,16 +105,15 @@
           @leaveRoom="handleLeaveRoomClick"
         />
 
-        <!-- Players List -->
+        <!-- Lista de jogadores -->
         <PlayersList :nonSpectatorPlayers="nonSpectatorPlayers" />
 
-        <!-- Status Message -->
+        <!-- Mensagem de status -->
         <StatusMessage :message="statusMessage" :messageType="statusMessageType" />
       </div>
     </div>
 
-    <!-- Modals -->
-    <!-- Login Modal -->
+    <!-- Modais -->
     <LoginModal
       :isOpen="showLoginModal"
       :username="loginUsername"
@@ -123,7 +122,6 @@
       @cancel="loginCancelled"
     />
 
-    <!-- Set Password Modal -->
     <SetPasswordModal
       :isOpen="showSetPasswordModal"
       :username="setPasswordUsername"
@@ -132,35 +130,30 @@
       @cancel="passwordSetupCancelled"
     />
 
-    <!-- Progress Modal -->
     <ProgressModal
       :isOpen="showProgressModalFlag"
       :questionHistory="questionHistory"
       @close="showProgressModalFlag = false"
     />
 
-    <!-- Logout Confirmation Modal -->
     <LogoutConfirmModal
       :isOpen="showLogoutConfirmModal"
       @confirm="confirmLogout"
       @close="showLogoutConfirmModal = false"
     />
 
-    <!-- Leave Room Confirmation Modal -->
     <LeaveRoomConfirmModal
       :isOpen="showLeaveRoomConfirmModal"
       @confirm="confirmLeaveRoom"
       @close="showLeaveRoomConfirmModal = false"
     />
 
-    <!-- Change Username Confirmation Modal -->
     <ChangeUsernameConfirmModal
       :isOpen="showChangeUsernameModal"
       @confirm="confirmChangeUsername"
       @close="showChangeUsernameModal = false"
     />
 
-    <!-- Answer Confirmation Modal -->
     <AnswerConfirmModal
       :isOpen="showAnswerConfirmModal"
       :selectedIndex="pendingAnswerIndex"
@@ -169,7 +162,6 @@
       @cancel="cancelAnswer"
     />
 
-    <!-- Wake Lock Indicator - Floating bottom-left -->
     <WakeLockIndicator
       :inRoom="inRoom"
       :wakeLockActive="wakeLock.isActive.value"
@@ -213,30 +205,25 @@ const wakeLock = useWakeLock()
 const { post } = useApi()
 const uiStore = useUIStore()
 
-// Initialize theme for PlayerPage (grey theme default)
 const { initTheme } = useTheme('PLAYER')
 initTheme()
 
-// Debug logging (only active in development mode)
 const DEBUG = import.meta.env.DEV
 const debugLog = (...args) => {
   if (DEBUG) console.log('[PLAYER DEBUG]', ...args)
 }
 
-// UI state
 const menuOpen = ref(false)
 const questionDisplaying = ref(false)
 const inRoom = ref(false)
 const isConnected = ref(false)
 const answerRevealed = ref(false)
 
-// Auto-mode timer state (v5.4.0)
 const autoMode = ref(false)
 const timerStartedAt = ref(null)
 const timerDuration = ref(null)
 const timerPaused = ref(false)
 
-// Login/Auth modals
 const showLoginModal = ref(false)
 const showSetPasswordModal = ref(false)
 const showProgressModalFlag = ref(false)
@@ -246,7 +233,6 @@ const showChangeUsernameModal = ref(false)
 const showAnswerConfirmModal = ref(false)
 const pendingAnswerIndex = ref(null)
 
-// Room/Player state
 const currentRoomCode = ref(null)
 const currentUsername = ref(null)
 const currentDisplayName = ref(null)
@@ -257,22 +243,18 @@ const playerGotCorrect = ref(false)
 const answeredCurrentQuestion = ref(false)
 const answeredQuestions = new Set()
 
-// Question progress counter
 const revealedCount = ref(0)
 const totalQuestions = ref(0)
 
-// End-of-game state (v5.6.0)
 const quizResultsData = ref(null)
 const quizCompleted = ref(false)
 const resultsCountdown = ref(0)
 let countdownInterval = null
 
-// Question history
 const questionHistory = ref([])
 const recentRooms = ref([])
-const activeRoomCodes = ref(null) // null = not loaded yet, [] = no active rooms
+const activeRoomCodes = ref(null)
 
-// Form inputs
 const usernameInput = ref('')
 const displayNameInput = ref('')
 const roomCodeInput = ref('')
@@ -280,39 +262,33 @@ const savedUsername = ref(localStorage.getItem('playerUsername'))
 const savedDisplayName = ref(localStorage.getItem('playerDisplayName'))
 const savedAccountType = ref(localStorage.getItem('playerAccountType'))
 
-// Connection state management
-const connectionState = ref('connected') // 'connected' | 'away' | 'disconnected' | 'warning'
+const connectionState = ref('connected')
 const isPageVisible = ref(true)
 const visibilitySwitchCount = ref(0)
 const visibilitySwitchTimestamps = ref([])
 const awayTimeout = ref(null)
 const disconnectTimeout = ref(null)
 const warningClearTimeout = ref(null)
-const answerDisplayTimeout = ref(null) // Timeout for auto-clearing revealed answer
+const answerDisplayTimeout = ref(null)
 const missedQuestionsBanner = ref(false)
-const lastJoinRoomAttempt = ref(0) // Track last joinRoom call to prevent duplicates
-const joinRoomInProgress = ref(false) // Track if joinRoom is being processed
+const lastJoinRoomAttempt = ref(0)
+const joinRoomInProgress = ref(false)
 const showConnectionLostBanner = ref(false)
 const reconnectionAttempts = ref(0)
 
-// Login form
 const loginUsername = ref('')
 const loginError = ref('')
 
-// Set password form
 const setPasswordUsername = ref('')
 const setPasswordError = ref('')
 
-// Status message
-const statusMessage = ref('Ready to join')
+const statusMessage = ref('Pronto para entrar')
 const statusMessageType = ref('')
 
-// Filter out spectators from player list
 const nonSpectatorPlayers = computed(() => {
   return currentPlayers.value.filter(p => !p.isSpectator)
 })
 
-// Connection state computed property for styling
 const connectionStateClass = computed(() => {
   switch (connectionState.value) {
     case 'connected': return 'status-connected'
@@ -325,15 +301,14 @@ const connectionStateClass = computed(() => {
 
 const connectionStateSymbol = computed(() => {
   switch (connectionState.value) {
-    case 'connected': return '●' // Green
-    case 'away': return '●' // Orange
-    case 'disconnected': return '●' // Red
-    case 'warning': return '!' // Yellow warning triangle
+    case 'connected': return '●'
+    case 'away': return '●'
+    case 'disconnected': return '●'
+    case 'warning': return '!'
     default: return '○'
   }
 })
 
-// Connection state management functions
 const updateConnectionState = (newState) => {
   if (connectionState.value === newState) return
 
@@ -342,7 +317,6 @@ const updateConnectionState = (newState) => {
 
   console.log(`[CONNECTION] State changed: ${oldState} → ${newState}`)
 
-  // Notify server of state change if in room
   if (inRoom.value && currentRoomCode.value) {
     socket.emit('playerStateChange', {
       roomCode: currentRoomCode.value,
@@ -351,7 +325,6 @@ const updateConnectionState = (newState) => {
     })
   }
 
-  // Clear existing timeouts when state changes
   if (newState === 'connected') {
     clearTimeout(awayTimeout.value)
     clearTimeout(disconnectTimeout.value)
@@ -362,20 +335,16 @@ const detectRapidSwitching = () => {
   const now = Date.now()
   const tenSecondsAgo = now - 10000
 
-  // Remove timestamps older than 10 seconds
   visibilitySwitchTimestamps.value = visibilitySwitchTimestamps.value.filter(
     timestamp => timestamp > tenSecondsAgo
   )
 
-  // Add current timestamp
   visibilitySwitchTimestamps.value.push(now)
 
-  // Check if 5+ switches in last 10 seconds
   if (visibilitySwitchTimestamps.value.length >= 5) {
     console.log('[CONNECTION] Rapid switching detected!')
     updateConnectionState('warning')
 
-    // Clear warning after 10 seconds of stable state
     clearTimeout(warningClearTimeout.value)
     warningClearTimeout.value = setTimeout(() => {
       if (connectionState.value === 'warning' && isPageVisible.value) {
@@ -395,31 +364,26 @@ const handleVisibilityChange = () => {
 
   console.log(`[CONNECTION] Page visibility changed: ${wasVisible} → ${isPageVisible.value}`)
 
-  // Detect rapid switching
   const isRapidSwitching = detectRapidSwitching()
   if (isRapidSwitching) {
-    return // Warning state already set
+    return
   }
 
   if (isPageVisible.value) {
-    // Page became visible - returning from away
     console.log('[CONNECTION] Page visible - returning from away')
 
-    // Clear away timeout
     clearTimeout(awayTimeout.value)
     clearTimeout(disconnectTimeout.value)
 
-    // Check if any questions were missed while away
     const missedQuestions = questionHistory.value.filter(q => q.revealed && q.playerChoice === null && q.missedWhileAway)
     if (missedQuestions.length > 0) {
       missedQuestionsBanner.value = true
       setTimeout(() => {
         missedQuestionsBanner.value = false
-      }, 5000) // Show banner for 5 seconds
+      }, 5000)
       console.log(`[CONNECTION] Player missed ${missedQuestions.length} question(s) while away`)
     }
 
-    // iOS Safari-specific: Force immediate reconnection
     if (/iPhone|iPad|iPod/i.test(navigator.userAgent)) {
       console.log('[CONNECTION] iOS device detected - forcing immediate reconnection')
 
@@ -427,7 +391,6 @@ const handleVisibilityChange = () => {
         socket.connect()
       }
 
-      // Wait for connection, then rejoin room if needed
       if (currentRoomCode.value && currentUsername.value && currentDisplayName.value) {
         const rejoinInterval = setInterval(() => {
           if (socket.isConnected.value) {
@@ -437,19 +400,16 @@ const handleVisibilityChange = () => {
           }
         }, 100)
 
-        // Safety timeout - clear interval after 3 seconds
         setTimeout(() => clearInterval(rejoinInterval), 3000)
       }
 
-      // Re-request wake lock for iOS
       if (wakeLock.isSupported.value && !wakeLock.isActive.value) {
         wakeLock.requestWakeLock()
       }
 
-      return // Skip normal reconnection logic for iOS
+      return
     }
 
-    // Android Chrome: Check connection after resume delay
     if (/Android.*Chrome/i.test(navigator.userAgent)) {
       console.log('[CONNECTION] Android Chrome detected - delayed reconnection check')
       setTimeout(() => {
@@ -459,62 +419,49 @@ const handleVisibilityChange = () => {
       }, 500)
     }
 
-    // Re-request wake lock (for all devices)
     if (wakeLock.isSupported.value && !wakeLock.isActive.value) {
       wakeLock.requestWakeLock()
     }
 
-    // Handle return from away/disconnected state (standard flow for non-iOS)
     if (connectionState.value === 'disconnected') {
-      // Was truly disconnected - need to rejoin room
       if (currentRoomCode.value && currentUsername.value && currentDisplayName.value && socket.isConnected.value) {
         emitJoinRoom(currentRoomCode.value, currentUsername.value, currentDisplayName.value, 'visibility change (disconnected)')
         updateConnectionState('connected')
       }
     } else if (connectionState.value === 'away') {
-      // Was only away - just update state (still in room server-side)
       console.log('[CONNECTION] Returned from away - updating state')
       updateConnectionState('connected')
     } else if (connectionState.value === 'warning') {
-      // Was rapid-switching - just log
       console.log('[CONNECTION] Returned while in warning state')
     }
   } else {
-    // Page became hidden - wait 30 seconds before marking as "away"
-    // This prevents brief tab switches from triggering state changes
     console.log('[CONNECTION] Page hidden - starting away timer (30s debounce)')
 
-    // Clear any existing timeout
     clearTimeout(awayTimeout.value)
 
-    // Wait 30 seconds before marking as away
     awayTimeout.value = setTimeout(() => {
-      // Only mark as away if page is still hidden
       if (!isPageVisible.value) {
         console.log('[CONNECTION] Page still hidden after 30s - marking as away')
         updateConnectionState('away')
 
-        // Set timeout for 2 minutes to mark as disconnected
         disconnectTimeout.value = setTimeout(() => {
           console.log('[CONNECTION] Away timeout (2 min) - marking as disconnected')
           updateConnectionState('disconnected')
 
-          // Set timeout for 5 minutes to fully remove from room
           setTimeout(() => {
             console.log('[CONNECTION] Disconnect timeout (5 min) - leaving room')
             if (inRoom.value) {
               handleLeaveRoom()
             }
-          }, 5 * 60 * 1000) // 5 minutes after disconnected state
-        }, 2 * 60 * 1000) // 2 minutes after away state
+          }, 5 * 60 * 1000)
+        }, 2 * 60 * 1000)
       } else {
         console.log('[CONNECTION] Page became visible again - canceling away state')
       }
-    }, 30 * 1000) // 30 second debounce before marking as away
+    }, 30 * 1000)
   }
 }
 
-// Setup socket event listeners - called on mount and after reconnect
 const setupSocketListeners = () => {
   debugLog('setupSocketListeners called', {
     inRoom: inRoom.value,
@@ -523,11 +470,6 @@ const setupSocketListeners = () => {
     timestamp: new Date().toISOString()
   })
 
-  // CRITICAL: Do NOT remove 'connect' and 'disconnect' listeners!
-  // useSocket.js has its own listeners that update module-scoped refs.
-  // Removing them breaks auto-rejoin which checks socket.isConnected.value
-
-  // Remove only PlayerPage-specific listeners to prevent duplicates
   socket.off('activeRoomsUpdate')
   socket.off('roomError')
   socket.off('roomCreated')
@@ -549,45 +491,36 @@ const setupSocketListeners = () => {
       timestamp: new Date().toISOString()
     })
 
-    // CRITICAL: If we were already in a room (inRoom === true), we need to rejoin
-    // because the socket.id changed. This handles app switching on mobile.
-    // The localStorage mechanism in onMounted only runs on initial page load.
     if (inRoom.value && currentRoomCode.value && currentUsername.value && currentDisplayName.value) {
       console.log('[CONNECTION] Socket connected while in room - rejoining')
       debugLog('Auto-rejoining after connect event (app switch scenario)')
       emitJoinRoom(currentRoomCode.value, currentUsername.value, currentDisplayName.value, 'connect event (app switch)')
     }
 
-    // Update connection state to connected (unless page is hidden)
     if (isPageVisible.value && connectionState.value !== 'warning') {
       updateConnectionState('connected')
     }
-    // Hide connection lost banner
     showConnectionLostBanner.value = false
     reconnectionAttempts.value = 0
-    // Request active rooms list once connected
     debugLog('Emitting getActiveRooms')
     socket.emit('getActiveRooms')
   })
 
   socket.on('disconnect', () => {
     isConnected.value = false
-    // Hard disconnect - mark as disconnected immediately
     console.log('[CONNECTION] Socket disconnected (hard disconnect)')
     updateConnectionState('disconnected')
 
-    // Show connection lost banner
     showConnectionLostBanner.value = true
     reconnectionAttempts.value = 0
 
-    // Set timeout for 5 minutes to fully remove from room
     clearTimeout(disconnectTimeout.value)
     disconnectTimeout.value = setTimeout(() => {
       console.log('[CONNECTION] Disconnect timeout (5 min) - leaving room')
       if (inRoom.value) {
         handleLeaveRoom()
       }
-    }, 5 * 60 * 1000) // 5 minutes
+    }, 5 * 60 * 1000)
   })
 
   socket.on('reconnect_attempt', (attempt) => {
@@ -607,13 +540,10 @@ const setupSocketListeners = () => {
     showConnectionLostBanner.value = false
     reconnectionAttempts.value = 0
 
-    // Update connection state to connected after reconnection
     if (connectionState.value !== 'warning') {
       updateConnectionState('connected')
     }
 
-    // CRITICAL: After reconnect, we have a new socket.id
-    // Server doesn't have this socket.id in room.players, so we must rejoin
     if (inRoom.value && currentRoomCode.value && currentUsername.value && currentDisplayName.value) {
       console.log('[CONNECTION] Rejoining room after reconnect')
       debugLog('Calling emitJoinRoom after reconnect')
@@ -622,7 +552,6 @@ const setupSocketListeners = () => {
   })
 
   socket.on('playerListUpdate', ({ roomCode, players, revealedCount: rc, totalQuestions: tq }) => {
-    // Update question progress counter if provided
     if (tq !== undefined) {
       revealedCount.value = rc || 0
       totalQuestions.value = tq
@@ -637,15 +566,12 @@ const setupSocketListeners = () => {
       timestamp: new Date().toISOString()
     })
 
-    // CRITICAL: Clear joinRoom in-progress flag FIRST - server has confirmed we're in A room
-    // This allows answer submissions to proceed even if there's a brief room code mismatch during rejoin
     if (joinRoomInProgress.value) {
       console.log('[CONNECTION] joinRoom completed - ready for interactions (cleared by playerListUpdate)')
       debugLog('Clearing joinRoomInProgress flag - join successful')
       joinRoomInProgress.value = false
     }
 
-    // If this update is for a different room, update our current room to match
     if (roomCode !== currentRoomCode.value) {
       console.log(`[CONNECTION] Room code updated from ${currentRoomCode.value} to ${roomCode}`)
       debugLog('Room code mismatch - updating', {
@@ -658,38 +584,31 @@ const setupSocketListeners = () => {
     console.log(`[CONNECTION] ✅ Setting inRoom to TRUE (${players.length} players in room)`)
     inRoom.value = true
     currentPlayers.value = players
-    // Exclude spectators from player count
     const nonSpectatorCount = players.filter(p => !p.isSpectator).length
-    statusMessage.value = `${nonSpectatorCount} player(s) in room`
-    // Save room to recent rooms only on successful join
+    statusMessage.value = `${nonSpectatorCount} jogador(es) na sala`
     saveRecentRoom(roomCode)
 
-    // Request wake lock to keep screen on during game
     if (wakeLock.isSupported.value && !wakeLock.isActive.value) {
       wakeLock.requestWakeLock()
     }
   })
 
   socket.on('questionPresented', ({ questionIndex, question, autoMode: isAutoMode, timerStartedAt: serverTimerStartedAt, timerDuration: serverTimerDuration }) => {
-    // SAFETY: Clear joinRoom in-progress flag - receiving a question means we're definitely in the room
     if (joinRoomInProgress.value) {
       console.log('[CONNECTION] Clearing joinRoom flag (questionPresented received)')
       joinRoomInProgress.value = false
     }
 
-    // CRITICAL: Clear any existing answer display timeout from previous question
     if (answerDisplayTimeout.value) {
       clearTimeout(answerDisplayTimeout.value)
       answerDisplayTimeout.value = null
     }
 
-    // Update auto-mode timer state (v5.4.0)
     autoMode.value = isAutoMode || false
     timerStartedAt.value = serverTimerStartedAt || null
     timerDuration.value = serverTimerDuration || null
 
     questionDisplaying.value = true
-    // Check if this question has already been revealed (for late joiners)
     const isAlreadyRevealed = question.revealed === true || question.isRevealed === true
     answerRevealed.value = isAlreadyRevealed
 
@@ -701,7 +620,6 @@ const setupSocketListeners = () => {
     selectedAnswer.value = null
     answeredCurrentQuestion.value = answeredQuestions.has(questionIndex)
 
-    // Add to history if not already there
     if (!questionHistory.value.find(q => q.index === questionIndex)) {
       const isMissedWhileAway = connectionState.value === 'away' || !isPageVisible.value
       questionHistory.value.push({
@@ -714,7 +632,7 @@ const setupSocketListeners = () => {
         presented: true,
         revealed: isAlreadyRevealed,
         isCorrect: false,
-        missedWhileAway: isMissedWhileAway // Mark if player was away when question presented
+        missedWhileAway: isMissedWhileAway
       })
       if (isMissedWhileAway) {
         console.log(`[CONNECTION] Question ${questionIndex} marked as missed while away`)
@@ -722,35 +640,31 @@ const setupSocketListeners = () => {
     }
 
     if (isAlreadyRevealed) {
-      // Check if player already answered this question (from answerHistoryRestored)
       const existingHistory = questionHistory.value.find(q => q.index === questionIndex)
       if (existingHistory && existingHistory.playerChoice !== null) {
-        // Player had answered - set their correct/incorrect status
         playerGotCorrect.value = existingHistory.isCorrect
-        statusMessage.value = existingHistory.isCorrect ? 'You got it right! 🎉' : 'Better luck next time!'
+        statusMessage.value = existingHistory.isCorrect ? 'Você acertou! 🎉' : 'Não foi dessa vez!'
         statusMessageType.value = existingHistory.isCorrect ? 'success' : 'error'
       } else {
-        // Player hadn't answered before reveal
         playerGotCorrect.value = false
-        statusMessage.value = 'This question has already been revealed'
+        statusMessage.value = 'Esta questão já foi revelada'
         statusMessageType.value = 'info'
       }
     } else if (answeredCurrentQuestion.value) {
-      statusMessage.value = 'You already answered this question'
+      statusMessage.value = 'Você já respondeu esta questão'
       statusMessageType.value = 'warning'
     } else {
-      statusMessage.value = 'Select your answer'
+      statusMessage.value = 'Selecione sua resposta'
       statusMessageType.value = 'info'
     }
   })
 
   socket.on('questionRevealed', ({ questionIndex, question, results, answerDisplayTime, revealedCount: rc, totalQuestions: tq }) => {
-    // Update question progress counter
     if (tq !== undefined) {
       revealedCount.value = rc || 0
       totalQuestions.value = tq
     }
-    // CRITICAL: Clear any existing answer display timeout before setting new one
+
     if (answerDisplayTimeout.value) {
       clearTimeout(answerDisplayTimeout.value)
       answerDisplayTimeout.value = null
@@ -762,7 +676,6 @@ const setupSocketListeners = () => {
     const myResult = results.find(r => r.name === currentDisplayName.value)
     playerGotCorrect.value = myResult && myResult.is_correct
 
-    // Update question history
     const historyItem = questionHistory.value.find(q => q.index === questionIndex)
     if (historyItem) {
       historyItem.revealed = true
@@ -770,22 +683,21 @@ const setupSocketListeners = () => {
       historyItem.isCorrect = playerGotCorrect.value
     }
 
-    statusMessage.value = playerGotCorrect.value ? 'You got it right! 🎉' : 'Better luck next time!'
+    statusMessage.value = playerGotCorrect.value ? 'Você acertou! 🎉' : 'Não foi dessa vez!'
     statusMessageType.value = playerGotCorrect.value ? 'success' : 'error'
 
-    // Auto-reset after timeout (from server quiz options, default 30 seconds)
-    const displayTimeout = (answerDisplayTime || 30) * 1000 // Convert seconds to milliseconds
+    const displayTimeout = (answerDisplayTime || 30) * 1000
     answerDisplayTimeout.value = setTimeout(() => {
       questionDisplaying.value = false
-      statusMessage.value = 'Waiting for next question...'
+      statusMessage.value = 'Aguardando a próxima questão...'
       statusMessageType.value = ''
-      answerDisplayTimeout.value = null // Clear the ref after timeout completes
+      answerDisplayTimeout.value = null
     }, displayTimeout)
   })
 
   socket.on('roomClosed', () => {
     localStorage.removeItem('trivia_last_room')
-    uiStore.addNotification('Room closed by presenter.', 'info')
+    uiStore.addNotification('A sala foi encerrada pelo apresentador.', 'info')
     handleLeaveRoom()
   })
 
@@ -795,12 +707,10 @@ const setupSocketListeners = () => {
   })
 
   socket.on('roomError', (msg) => {
-    // CRITICAL: Clear joinRoomInProgress flag on error - server rejected the join attempt
     if (joinRoomInProgress.value) {
       console.log('[CONNECTION] Clearing joinRoom flag due to room error')
       joinRoomInProgress.value = false
     }
-    // Clear stale room from localStorage so we don't retry on next page load
     if (msg === 'Room not found.') {
       localStorage.removeItem('trivia_last_room')
     }
@@ -816,18 +726,14 @@ const setupSocketListeners = () => {
   socket.on('answerHistoryRestored', ({ answerHistory }) => {
     console.log('[PLAYER] Answer history restored:', answerHistory)
 
-    // Clear existing history to ensure each session is isolated
     questionHistory.value = []
     answeredQuestions.clear()
 
-    // Process each answered question (if any)
     if (answerHistory && answerHistory.length > 0) {
       answerHistory.forEach((item) => {
         const { questionIndex, choice, isRevealed, isCorrect, text, choices, correctChoice } = item
-        // Mark question as answered in the local set
         answeredQuestions.add(questionIndex)
 
-        // Build question data object
         const questionData = {
           index: questionIndex,
           text: text,
@@ -838,12 +744,10 @@ const setupSocketListeners = () => {
           isCorrect: isCorrect || false
         }
 
-        // Only include correctChoice if question was revealed
         if (isRevealed && correctChoice !== undefined) {
           questionData.correctChoice = correctChoice
         }
 
-        // Add to history for this session
         questionHistory.value.push(questionData)
       })
     }
@@ -851,23 +755,19 @@ const setupSocketListeners = () => {
 
   socket.on('activeRoomsUpdate', (rooms) => {
     activeRoomCodes.value = Array.isArray(rooms) ? rooms.map(r => r.roomCode) : []
-    // Load recent rooms after receiving active rooms list
     loadRecentRooms()
   })
 
-  // Auto-mode state changes (v5.4.0) - for pause/resume sync
   socket.on('autoModeStateChanged', ({ enabled, state, timerStartedAt: newTimerStartedAt, timerDuration: newTimerDuration }) => {
     console.log('[AUTO-MODE] State changed:', { enabled, state, newTimerStartedAt, newTimerDuration })
 
     autoMode.value = enabled
 
-    // Handle pause state
     if (state === 'paused') {
       timerPaused.value = true
     } else {
       timerPaused.value = false
 
-      // Update timer info when resuming
       if (newTimerStartedAt) {
         timerStartedAt.value = newTimerStartedAt
       }
@@ -877,20 +777,17 @@ const setupSocketListeners = () => {
     }
   })
 
-  // All players answered event (v5.4.0) - brief notification
   socket.on('allPlayersAnswered', ({ waitSeconds }) => {
     console.log(`[AUTO-MODE] All players answered, waiting ${waitSeconds}s before reveal`)
-    statusMessage.value = 'All players answered! Revealing soon...'
+    statusMessage.value = 'Todos os jogadores responderam! Revelando em instantes...'
     statusMessageType.value = 'info'
   })
 
-  // v5.6.0: Quiz completed - show completion screen for ALL quizzes
   socket.on('quizCompleted', (data) => {
     console.log('[PLAYER] Quiz completed:', data)
     quizCompleted.value = true
     questionDisplaying.value = false
 
-    // If results are coming, show a countdown
     if (data.showResults) {
       resultsCountdown.value = 5
       if (countdownInterval) clearInterval(countdownInterval)
@@ -904,7 +801,6 @@ const setupSocketListeners = () => {
     }
   })
 
-  // End-of-game results (v5.6.0) - arrives 5s after quizCompleted if enabled
   socket.on('quizResults', (data) => {
     if (data.showResults) {
       quizResultsData.value = data
@@ -917,14 +813,12 @@ const setupSocketListeners = () => {
   })
 }
 
-// Initialize page
 onMounted(() => {
   debugLog('PlayerPage onMounted', {
     savedUsername: savedUsername.value,
     timestamp: new Date().toISOString()
   })
 
-  // Restore saved values
   if (savedUsername.value) {
     usernameInput.value = ''
     loginUsername.value = savedUsername.value
@@ -934,32 +828,23 @@ onMounted(() => {
 
   displayNameInput.value = localStorage.getItem('playerDisplayName') || ''
 
-  // Auto-login registered player
   autoLoginRegisteredPlayer()
 
-  // CRITICAL: Initialize socket connection
-  // useSocket's lifecycle hooks were removed to prevent multiple registrations
   debugLog('Calling socket.connect() from onMounted')
   socket.connect()
 
-  // Set up all socket listeners
   debugLog('Calling setupSocketListeners() from onMounted')
   setupSocketListeners()
 
-  // Set up Page Visibility API for connection state management
   document.addEventListener('visibilitychange', handleVisibilityChange)
-  // Initialize page visibility state
   isPageVisible.value = !document.hidden
   console.log(`[CONNECTION] Initial page visibility: ${isPageVisible.value}`)
 
-  // Handle case where socket is already connected when component mounts
-  // (the 'connect' event won't fire for an already-connected socket)
   if (socket.isConnected.value && connectionState.value !== 'connected') {
     console.log('[CONNECTION] Socket already connected on mount - updating state')
     updateConnectionState('connected')
   }
 
-  // Auto-rejoin system: Save room state on page unload
   const handleBeforeUnload = () => {
     if (inRoom.value && currentRoomCode.value) {
       localStorage.setItem('trivia_last_room', JSON.stringify({
@@ -973,7 +858,6 @@ onMounted(() => {
   }
   window.addEventListener('beforeunload', handleBeforeUnload)
 
-  // Auto-rejoin system: Check for saved session on mount
   const lastRoom = localStorage.getItem('trivia_last_room')
   debugLog('Checking for saved session', {
     lastRoomExists: !!lastRoom,
@@ -1002,12 +886,11 @@ onMounted(() => {
           socketConnectedNow: socket.isConnected.value
         })
 
-        roomCodeInput.value = roomCode  // Sync input box with auto-rejoin room
+        roomCodeInput.value = roomCode
         currentRoomCode.value = roomCode
         currentUsername.value = username
         currentDisplayName.value = displayName
 
-        // Wait for socket to connect, then rejoin
         const autoRejoinInterval = setInterval(() => {
           debugLog('Auto-rejoin interval tick', {
             socketConnected: socket.isConnected.value,
@@ -1021,7 +904,6 @@ onMounted(() => {
           }
         }, 100)
 
-        // Safety timeout - stop trying after 10 seconds (mobile networks can be slow)
         setTimeout(() => {
           clearInterval(autoRejoinInterval)
           if (!socket.isConnected.value) {
@@ -1049,22 +931,18 @@ onMounted(() => {
     }
   }
 
-  // Fallback: if no response within 3 seconds, load recent rooms anyway
   setTimeout(() => {
     if (activeRoomCodes.value === null) {
       loadRecentRooms()
     }
   }, 3000)
 
-  // Check for room code in URL query parameter (from QR code)
   const roomFromUrl = route.query.room
   if (roomFromUrl) {
     roomCodeInput.value = roomFromUrl.toUpperCase()
     console.log(`Room code from URL: ${roomCodeInput.value}`)
 
-    // Auto-join if user has credentials
     if (savedUsername.value && savedDisplayName.value) {
-      // Wait a bit for socket to connect
       setTimeout(() => {
         quickJoinRoom(roomCodeInput.value)
       }, 500)
@@ -1076,22 +954,15 @@ onMounted(() => {
 })
 
 onUnmounted(() => {
-  // CRITICAL: Don't disconnect socket on unmount!
-  // Socket is module-scoped and should persist across page refreshes/remounts
-  // Disconnecting here causes duplicate socket creation on mobile refresh
-  // socket.disconnect()
-
   document.removeEventListener('click', closeMenuIfOutside)
   document.removeEventListener('touchstart', closeMenuIfOutside)
   document.removeEventListener('visibilitychange', handleVisibilityChange)
 
-  // Clear all connection timeouts
   clearTimeout(awayTimeout.value)
   clearTimeout(disconnectTimeout.value)
   clearTimeout(warningClearTimeout.value)
 })
 
-// Methods
 const toggleMenu = () => {
   menuOpen.value = !menuOpen.value
 }
@@ -1108,16 +979,13 @@ const loadRecentRooms = () => {
   const stored = localStorage.getItem('playerRecentRooms')
   let rooms = stored ? JSON.parse(stored) : []
 
-  // If we've received the active rooms list from server (even if empty)
   if (activeRoomCodes.value !== null) {
     const filteredRooms = rooms.filter(room => activeRoomCodes.value.includes(room.code))
-    // Update localStorage to remove closed rooms
     if (filteredRooms.length < rooms.length) {
       localStorage.setItem('playerRecentRooms', JSON.stringify(filteredRooms))
     }
     recentRooms.value = filteredRooms
   } else {
-    // Haven't received server response yet - show stored rooms temporarily
     recentRooms.value = rooms
   }
 }
@@ -1137,16 +1005,15 @@ const saveRecentRoom = (roomCode) => {
 }
 
 const quickJoinRoom = async (roomCode) => {
-  // Get display name from saved value or input field
   const displayName = savedDisplayName.value || displayNameInput.value.trim()
 
   if (!savedUsername.value) {
-    uiStore.addNotification('Please enter your username first.', 'warning')
+    uiStore.addNotification('Por favor, informe seu usuário primeiro.', 'warning')
     return
   }
 
   if (!displayName) {
-    uiStore.addNotification('Please enter your display name first.', 'warning')
+    uiStore.addNotification('Por favor, informe o nome de exibição.', 'warning')
     return
   }
 
@@ -1176,19 +1043,16 @@ const selectAnswer = async (idx) => {
     return
   }
 
-  // CRITICAL: Block answer submission until joinRoom is fully processed by server
-  // This prevents answers from being lost when user reconnects and immediately tries to answer
   if (joinRoomInProgress.value) {
     console.warn('[ANSWER] ❌ BLOCKED - joinRoom still in progress. User will see "Reconnecting..." message')
-    statusMessage.value = 'Reconnecting... please wait'
+    statusMessage.value = 'Reconectando... aguarde'
     statusMessageType.value = 'warning'
     return
   }
 
   console.log(`[ANSWER] Player selected answer ${idx}, showing confirmation modal`)
-  // Store the selected answer and show confirmation modal
   pendingAnswerIndex.value = idx
-  selectedAnswer.value = idx // Show visual selection
+  selectedAnswer.value = idx
   showAnswerConfirmModal.value = true
 }
 
@@ -1200,32 +1064,27 @@ const confirmAnswer = () => {
   answeredCurrentQuestion.value = true
   answeredQuestions.add(currentQuestion.value.index)
 
-  // Update history
   const historyItem = questionHistory.value.find(q => q.index === currentQuestion.value.index)
   if (historyItem) {
     historyItem.playerChoice = idx
-    // Clear missedWhileAway flag since player actually answered
     historyItem.missedWhileAway = false
   }
 
   socket.emit('submitAnswer', { roomCode: currentRoomCode.value, choice: idx })
-  statusMessage.value = 'Answer submitted! ✓'
+  statusMessage.value = 'Resposta enviada! ✓'
   statusMessageType.value = 'success'
 
-  // Close modal and clear pending answer
   showAnswerConfirmModal.value = false
   pendingAnswerIndex.value = null
 }
 
 const cancelAnswer = () => {
   console.log('[ANSWER] Player cancelled answer selection')
-  // Clear selection and close modal
   selectedAnswer.value = null
   pendingAnswerIndex.value = null
   showAnswerConfirmModal.value = false
 }
 
-// Helper function to emit joinRoom with proper debouncing and flag management
 const emitJoinRoom = (roomCode, username, displayName, source = '') => {
   debugLog('emitJoinRoom called', {
     roomCode,
@@ -1237,7 +1096,6 @@ const emitJoinRoom = (roomCode, username, displayName, source = '') => {
     timestamp: new Date().toISOString()
   })
 
-  // Debounce check
   const now = Date.now()
   if (now - lastJoinRoomAttempt.value < 2000) {
     console.log(`[CONNECTION] Skipping duplicate joinRoom from ${source} (debounced)`)
@@ -1248,7 +1106,6 @@ const emitJoinRoom = (roomCode, username, displayName, source = '') => {
   }
   lastJoinRoomAttempt.value = now
 
-  // Set in-progress flag
   joinRoomInProgress.value = true
   console.log(`[CONNECTION] Emitting joinRoom from ${source} - flag set to true`)
   debugLog('joinRoom emitting to server', {
@@ -1258,8 +1115,6 @@ const emitJoinRoom = (roomCode, username, displayName, source = '') => {
     source
   })
 
-  // SAFETY: Auto-clear flag after 5 seconds as fallback
-  // This prevents the flag from getting stuck if playerListUpdate doesn't fire
   setTimeout(() => {
     if (joinRoomInProgress.value) {
       console.warn('[CONNECTION] joinRoom flag still true after 5s - auto-clearing (safety mechanism)')
@@ -1268,11 +1123,9 @@ const emitJoinRoom = (roomCode, username, displayName, source = '') => {
     }
   }, 5000)
 
-  // PHASE 1: Get PlayerID for persistent player identification
   const playerID = socket.getPlayerID()
   debugLog('PlayerID for joinRoom:', playerID)
 
-  // Emit the event with PlayerID
   socket.emit('joinRoom', { roomCode, username, displayName, playerID })
   socket.setRoomContext(roomCode, username)
 
@@ -1294,17 +1147,17 @@ const handleJoinRoom = async () => {
   }
 
   if (!username) {
-    uiStore.addNotification('Please enter a username.', 'warning')
+    uiStore.addNotification('Por favor, informe um usuário.', 'warning')
     return
   }
 
   if (!displayName) {
-    uiStore.addNotification('Please enter a display name.', 'warning')
+    uiStore.addNotification('Por favor, informe o nome exibido.', 'warning')
     return
   }
 
   if (!roomCode) {
-    uiStore.addNotification('Please enter a room code.', 'warning')
+    uiStore.addNotification('Por favor, informe o código da sala.', 'warning')
     return
   }
 
@@ -1335,7 +1188,6 @@ const handleJoinRoom = async () => {
     currentUsername.value = username
     currentDisplayName.value = displayName
     currentRoomCode.value = roomCode
-    // Don't save room yet - wait for playerListUpdate confirmation
     if (DEBUG) console.log('[JOIN] Emitting joinRoom event')
     emitJoinRoom(roomCode, username, displayName, 'manual join')
   } catch (err) {
@@ -1347,9 +1199,8 @@ const handleJoinRoom = async () => {
         stack: err.stack
       })
     }
-    // Show actual error message to user
-    const errorMsg = err.response?.data?.error || err.message || 'Unknown error'
-    uiStore.addNotification(`Join failed: ${errorMsg}`, 'error')
+    const errorMsg = err.response?.data?.error || err.message || 'Erro desconhecido'
+    uiStore.addNotification(`Falha ao entrar: ${errorMsg}`, 'error')
   }
 }
 
@@ -1367,7 +1218,6 @@ const handleLoginSubmit = async (password) => {
 
     showLoginModal.value = false
 
-    // Proceed with join
     const displayName = displayNameInput.value.trim()
     const roomCode = roomCodeInput.value.trim()
     currentUsername.value = loginUsername.value
@@ -1377,10 +1227,8 @@ const handleLoginSubmit = async (password) => {
     saveRecentRoom(roomCode)
     emitJoinRoom(roomCode, loginUsername.value, displayName, 'login submit')
   } catch (err) {
-    // Check if password reset is required (status 428)
     if (err.response?.status === 428 || err.response?.data?.requiresPasswordReset) {
       console.log('[AUTH] Password reset required for user:', loginUsername.value)
-      // Close login modal and open set password modal
       showLoginModal.value = false
       setPasswordUsername.value = loginUsername.value
       setPasswordError.value = ''
@@ -1388,7 +1236,7 @@ const handleLoginSubmit = async (password) => {
       return
     }
 
-    loginError.value = err.response?.data?.error || 'Invalid password'
+    loginError.value = err.response?.data?.error || 'Senha inválida'
   }
 }
 
@@ -1398,12 +1246,12 @@ const loginCancelled = () => {
 
 const handleSetPasswordSubmit = async ({ newPassword, confirmPassword }) => {
   if (newPassword !== confirmPassword) {
-    setPasswordError.value = 'Passwords do not match!'
+    setPasswordError.value = 'As senhas não coincidem!'
     return
   }
 
   if (newPassword.length < 6) {
-    setPasswordError.value = 'Password must be at least 6 characters'
+    setPasswordError.value = 'A senha deve ter pelo menos 6 caracteres'
     return
   }
 
@@ -1420,7 +1268,6 @@ const handleSetPasswordSubmit = async ({ newPassword, confirmPassword }) => {
 
     showSetPasswordModal.value = false
 
-    // Proceed with join
     const displayName = displayNameInput.value.trim()
     const roomCode = roomCodeInput.value.trim()
     currentUsername.value = setPasswordUsername.value
@@ -1430,7 +1277,7 @@ const handleSetPasswordSubmit = async ({ newPassword, confirmPassword }) => {
     saveRecentRoom(roomCode)
     emitJoinRoom(roomCode, setPasswordUsername.value, displayName, 'password setup')
   } catch (err) {
-    setPasswordError.value = err.response?.data?.error || 'Failed to set password'
+    setPasswordError.value = err.response?.data?.error || 'Falha ao definir a senha'
   }
 }
 
@@ -1442,11 +1289,10 @@ const handleManageAccount = () => {
   const username = savedUsername.value || usernameInput.value.trim()
 
   if (!username) {
-    uiStore.addNotification('Please enter a username.', 'warning')
+    uiStore.addNotification('Por favor, informe um usuário.', 'warning')
     return
   }
 
-  // Save username to localStorage if not already saved
   if (!savedUsername.value) {
     localStorage.setItem('playerUsername', username)
     localStorage.setItem('playerAccountType', 'guest')
@@ -1466,7 +1312,6 @@ const confirmLeaveRoom = () => {
 }
 
 const handleLeaveRoom = () => {
-  // Reset local state
   inRoom.value = false
   currentRoomCode.value = null
   currentUsername.value = null
@@ -1474,7 +1319,7 @@ const handleLeaveRoom = () => {
   questionDisplaying.value = false
   selectedAnswer.value = null
   answeredQuestions.clear()
-  questionHistory.value = [] // Clear session-specific history
+  questionHistory.value = []
   currentPlayers.value = []
   quizResultsData.value = null
   quizCompleted.value = false
@@ -1486,28 +1331,22 @@ const handleLeaveRoom = () => {
   timerStartedAt.value = null
   timerDuration.value = null
   timerPaused.value = false
-  statusMessage.value = 'Ready to join'
+  statusMessage.value = 'Pronto para entrar'
   statusMessageType.value = ''
   menuOpen.value = false
 
-  // Clear any pending answer display timeout
   if (answerDisplayTimeout.value) {
     clearTimeout(answerDisplayTimeout.value)
     answerDisplayTimeout.value = null
   }
 
-  // Release wake lock when leaving room
   if (wakeLock.isActive.value) {
     wakeLock.releaseWakeLock()
   }
 
-  // Clear heartbeat and room context
   socket.clearRoomContext()
-
-  // Disconnect and reconnect to clear room state on server
   socket.disconnect()
 
-  // Re-establish socket connection and listeners after brief delay
   setTimeout(() => {
     socket.connect()
     setupSocketListeners()
@@ -1543,7 +1382,7 @@ const confirmLogout = async () => {
   questionHistory.value = []
   recentRooms.value = []
 
-  uiStore.addNotification('Logged out successfully', 'info')
+  uiStore.addNotification('Sessão encerrada com sucesso', 'info')
 }
 
 const showProgressModal = () => {
@@ -1555,7 +1394,7 @@ const forceReconnect = () => {
   socket.disconnect()
   setTimeout(() => {
     socket.connect()
-    setupSocketListeners() // CRITICAL: Re-register event listeners after reconnect
+    setupSocketListeners()
   }, 100)
 }
 
@@ -1563,8 +1402,7 @@ const autoLoginRegisteredPlayer = async () => {
   const token = localStorage.getItem('playerAuthToken')
   if (token && savedAccountType.value === 'registered') {
     try {
-      const response = await post('/api/auth/verify-player', {})
-      // Token is valid, user will be auto-logged in
+      await post('/api/auth/verify-player', {})
     } catch (err) {
       localStorage.removeItem('playerAuthToken')
     }
@@ -1576,7 +1414,7 @@ const verifyAuthToken = async () => {
   if (!token) return false
 
   try {
-    const response = await post('/api/auth/verify-player', {})
+    await post('/api/auth/verify-player', {})
     return true
   } catch (err) {
     localStorage.removeItem('playerAuthToken')
@@ -1603,7 +1441,6 @@ const verifyAuthToken = async () => {
   box-sizing: border-box;
 }
 
-/* Connection Lost Banner */
 .connection-lost-banner {
   position: fixed;
   top: 60px;
@@ -1644,15 +1481,13 @@ const verifyAuthToken = async () => {
   opacity: 0.9;
 }
 
-/* Button styles now in Button component */
 .reconnect-btn {
-  margin-left: auto; /* Keep for flexbox positioning */
+  margin-left: auto;
 }
 
-/* Missed Questions Banner */
 .missed-questions-banner {
   position: fixed;
-  top: 120px; /* Below connection lost banner */
+  top: 120px;
   left: 50%;
   transform: translateX(-50%);
   background: var(--warning-color);
@@ -1686,7 +1521,6 @@ const verifyAuthToken = async () => {
   box-sizing: border-box;
 }
 
-/* Quiz Complete screen (v5.6.0) */
 .quiz-complete-screen {
   display: flex;
   flex-direction: column;
@@ -1751,7 +1585,6 @@ const verifyAuthToken = async () => {
   gap: 2rem;
 }
 
-/* Mobile styles */
 @media (max-width: 768px) {
   .player-container {
     flex-direction: column;
