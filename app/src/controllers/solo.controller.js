@@ -277,15 +277,28 @@ export async function createSoloSession(req, res, next) {
 
 /**
  * Submit an answer for the current question
- * Body: { questionId, answerIndex, participantId }
+ * Body: { questionId, answerIndex, participantId, responseTimeMs }
  * Returns: { isCorrect, correctChoice, nextQuestion }
  */
 export async function submitSoloAnswer(req, res, next) {
   const { id: sessionId } = req.params;
-  const { questionId, answerIndex, participantId } = req.body;
+  const { questionId, answerIndex, participantId, responseTimeMs } = req.body;
 
-  if (questionId === undefined || answerIndex === undefined || !participantId) {
-    return next(new BadRequestError('questionId, answerIndex, and participantId are required'));
+  if (
+    questionId === undefined ||
+    answerIndex === undefined ||
+    !participantId ||
+    responseTimeMs === undefined
+  ) {
+    return next(
+      new BadRequestError('questionId, answerIndex, participantId, and responseTimeMs are required')
+    );
+  }
+
+  const parsedResponseTimeMs = Number(responseTimeMs);
+
+  if (!Number.isFinite(parsedResponseTimeMs) || parsedResponseTimeMs < 0) {
+    return next(new BadRequestError('responseTimeMs must be a valid non-negative number'));
   }
 
   const client = await getClient();
@@ -351,13 +364,20 @@ export async function submitSoloAnswer(req, res, next) {
     const correctChoice = correctAnswerResult.rows[0].display_order;
     const isCorrect = answerIndex === correctChoice;
 
-    // Record the answer
+    // Record the answer, including response time
     await client.query(
-      `INSERT INTO participant_answers (participant_id, question_id, answer_id, is_correct, answered_at)
-       SELECT $1, $2, a.id, $3, NOW()
+      `INSERT INTO participant_answers (
+        participant_id,
+        question_id,
+        answer_id,
+        is_correct,
+        response_time_ms,
+        answered_at
+      )
+       SELECT $1, $2, a.id, $3, $4, NOW()
        FROM answers a
-       WHERE a.question_id = $2 AND a.display_order = $4`,
-      [participantId, questionId, isCorrect, answerIndex]
+       WHERE a.question_id = $2 AND a.display_order = $5`,
+      [participantId, questionId, isCorrect, parsedResponseTimeMs, answerIndex]
     );
 
     // Mark question as presented and revealed in session_questions
@@ -368,11 +388,15 @@ export async function submitSoloAnswer(req, res, next) {
       [sessionId, questionId]
     );
 
-    // Update participant score if correct
+    // Update participant score/time if correct
     if (isCorrect) {
       await client.query(
-        `UPDATE game_participants SET score = score + 1 WHERE id = $1`,
-        [participantId]
+        `UPDATE game_participants
+         SET
+           score = score + 1,
+           total_time_ms = COALESCE(total_time_ms, 0) + $2
+         WHERE id = $1`,
+        [participantId, parsedResponseTimeMs]
       );
     }
 
@@ -431,6 +455,7 @@ export async function submitSoloAnswer(req, res, next) {
       isCorrect,
       correctChoice,
       correctAnswerText,
+      responseTimeMs: parsedResponseTimeMs,
       hasNextQuestion: nextQuestion !== null,
       nextQuestionIndex,
       nextQuestion
@@ -513,9 +538,11 @@ export async function getSoloResults(req, res, next) {
 
       const session = sessionResult.rows[0];
 
-      // Get participant info
+      // Get participant info, including total time
       const participantResult = await client.query(
-        `SELECT id, display_name, score FROM game_participants WHERE game_session_id = $1`,
+        `SELECT id, display_name, score, total_time_ms
+         FROM game_participants
+         WHERE game_session_id = $1`,
         [sessionId]
       );
 
@@ -534,6 +561,7 @@ export async function getSoloResults(req, res, next) {
           qq.question_order,
           qs.question_text,
           pa.is_correct,
+          pa.response_time_ms,
           a_selected.answer_text as selected_answer,
           a_selected.display_order as selected_index,
           a_correct.answer_text as correct_answer,
@@ -556,7 +584,8 @@ export async function getSoloResults(req, res, next) {
         selectedAnswer: row.selected_answer,
         selectedIndex: row.selected_index,
         correctAnswer: row.correct_answer,
-        correctIndex: row.correct_index
+        correctIndex: row.correct_index,
+        responseTimeMs: row.response_time_ms ?? null
       }));
 
       const correctCount = questions.filter(q => q.isCorrect).length;
@@ -573,6 +602,7 @@ export async function getSoloResults(req, res, next) {
         completedAt: session.completed_at,
         playerName: participant.display_name,
         score: participant.score,
+        totalTimeMs: participant.total_time_ms || 0,
         totalQuestions,
         correctCount,
         answeredCount,
