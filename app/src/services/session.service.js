@@ -150,50 +150,61 @@ for (const [questionIndexStr, choiceIndex] of Object.entries(playerAnswers)) {
   ]
 );
         } else {
-          // Guest user: try to find existing by socket_id, or insert new
-         participantResult = await client.query(
-  `
-  INSERT INTO game_participants (
-    user_id, game_session_id, display_name, score, total_time_ms,
-    is_connected, socket_id, joined_at, last_seen
-  )
-  VALUES (NULL, $1, $2, $3, $4, $5, $6, $7)
-  RETURNING id
-`,
-  [
-    sessionId,
-    player.name,
-    calculatedScore,
-    calculatedTotalTimeMs,
-    player.connected || false,
-    player.id,
-    new Date(),
-    new Date(),
-  ]
-);
-          } else {
-            // Update existing guest participant
-          await client.query(
-  `
-  UPDATE game_participants SET
-    display_name = $1,
-    score = $2,
-    total_time_ms = $3,
-    is_connected = $4,
-    last_seen = $5
-  WHERE id = $6
-`,
-  [
-    player.name,
-    calculatedScore,
-    calculatedTotalTimeMs,
-    player.connected || false,
-    new Date(),
-    participantResult.rows[0].id
-  ]
-);
-          }
-        }
+  // Guest user: try to find existing by socket_id, or insert new
+  participantResult = await client.query(
+    `
+    SELECT id FROM game_participants
+    WHERE game_session_id = $1 AND socket_id = $2 AND user_id IS NULL
+    LIMIT 1
+    `,
+    [sessionId, player.id]
+  );
+
+  if (participantResult.rows.length === 0) {
+    // Insert new guest participant
+    participantResult = await client.query(
+      `
+      INSERT INTO game_participants (
+        user_id, game_session_id, display_name, score, total_time_ms,
+        is_connected, socket_id, joined_at, last_seen
+      )
+      VALUES (NULL, $1, $2, $3, $4, $5, $6, $7)
+      RETURNING id
+      `,
+      [
+        sessionId,
+        player.name,
+        calculatedScore,
+        calculatedTotalTimeMs,
+        player.connected || false,
+        player.id,
+        new Date(),
+        new Date(),
+      ]
+    );
+  } else {
+    // Update existing guest participant
+    await client.query(
+      `
+      UPDATE game_participants SET
+        display_name = $1,
+        score = $2,
+        total_time_ms = $3,
+        is_connected = $4,
+        last_seen = $5
+      WHERE id = $6
+      `,
+      [
+        player.name,
+        calculatedScore,
+        calculatedTotalTimeMs,
+        player.connected || false,
+        new Date(),
+        participantResult.rows[0].id
+      ]
+    );
+  }
+}
 
         const participantId = participantResult.rows[0].id;
 
