@@ -1101,10 +1101,16 @@ const getOrCreateRoomSession = (playerID, roomCode, username, socketId) => {
  * @param {number} questionIndex - Question index
  * @param {number} choiceIndex - Answer choice index
  */
-const updateRoomSessionAnswer = (roomSessionID, questionIndex, choiceIndex) => {
+const updateRoomSessionAnswer = (roomSessionID, questionIndex, choiceIndex, responseTimeMs = 0) => {
   const sessionData = roomSessionData.get(roomSessionID);
   if (sessionData) {
     sessionData.answers[questionIndex] = choiceIndex;
+
+    if (!sessionData.answerTimes) {
+      sessionData.answerTimes = {};
+    }
+
+    sessionData.answerTimes[questionIndex] = responseTimeMs;
     sessionData.lastActive = Date.now();
 
     if (DEBUG_ENABLED) {
@@ -1112,6 +1118,7 @@ const updateRoomSessionAnswer = (roomSessionID, questionIndex, choiceIndex) => {
         roomSessionID,
         questionIndex,
         choiceIndex,
+        responseTimeMs,
         totalAnswers: Object.keys(sessionData.answers).length
       });
     }
@@ -2413,7 +2420,7 @@ io.on('connection', (socket) => {
 
       // PHASE 3: Update RoomSessionID with answer data
       if (player.roomSessionID) {
-        updateRoomSessionAnswer(player.roomSessionID, room.currentQuestionIndex, choice);
+        updateRoomSessionAnswer(player.roomSessionID,room.currentQuestionIndex,choice,safeResponseTimeMs);
       }
 
       if (DEBUG_ENABLED) {
