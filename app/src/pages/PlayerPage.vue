@@ -242,6 +242,7 @@ const selectedAnswer = ref(null)
 const playerGotCorrect = ref(false)
 const answeredCurrentQuestion = ref(false)
 const answeredQuestions = new Set()
+const questionStartedAt = ref(null)  
 
 const revealedCount = ref(0)
 const totalQuestions = ref(0)
@@ -593,73 +594,76 @@ const setupSocketListeners = () => {
     }
   })
 
-  socket.on('questionPresented', ({ questionIndex, question, autoMode: isAutoMode, timerStartedAt: serverTimerStartedAt, timerDuration: serverTimerDuration }) => {
-    if (joinRoomInProgress.value) {
-      console.log('[CONNECTION] Clearing joinRoom flag (questionPresented received)')
-      joinRoomInProgress.value = false
-    }
+socket.on('questionPresented', ({ questionIndex, question, autoMode: isAutoMode, timerStartedAt: serverTimerStartedAt, timerDuration: serverTimerDuration }) => {
+  if (joinRoomInProgress.value) {
+    console.log('[CONNECTION] Clearing joinRoom flag (questionPresented received)')
+    joinRoomInProgress.value = false
+  }
 
-    if (answerDisplayTimeout.value) {
-      clearTimeout(answerDisplayTimeout.value)
-      answerDisplayTimeout.value = null
-    }
+  if (answerDisplayTimeout.value) {
+    clearTimeout(answerDisplayTimeout.value)
+    answerDisplayTimeout.value = null
+  }
 
-    autoMode.value = isAutoMode || false
-    timerStartedAt.value = serverTimerStartedAt || null
-    timerDuration.value = serverTimerDuration || null
+  questionStartedAt.value = Date.now()
 
-    questionDisplaying.value = true
-    const isAlreadyRevealed = question.revealed === true || question.isRevealed === true
-    answerRevealed.value = isAlreadyRevealed
+  autoMode.value = isAutoMode || false
+  timerStartedAt.value = serverTimerStartedAt || null
+  timerDuration.value = serverTimerDuration || null
 
-    currentQuestion.value = {
-      ...question,
+  questionDisplaying.value = true
+  const isAlreadyRevealed = question.revealed === true || question.isRevealed === true
+  answerRevealed.value = isAlreadyRevealed
+
+  currentQuestion.value = {
+    ...question,
+    correctChoice: isAlreadyRevealed ? question.correctChoice : undefined,
+    index: questionIndex
+  }
+  selectedAnswer.value = null
+  answeredCurrentQuestion.value = answeredQuestions.has(questionIndex)
+
+  if (!questionHistory.value.find(q => q.index === questionIndex)) {
+    const isMissedWhileAway = connectionState.value === 'away' || !isPageVisible.value
+    questionHistory.value.push({
+      index: questionIndex,
+      text: question.text,
+      choices: question.choices,
+      imageUrl: question.imageUrl || null,
+      playerChoice: null,
       correctChoice: isAlreadyRevealed ? question.correctChoice : undefined,
-      index: questionIndex
+      presented: true,
+      revealed: isAlreadyRevealed,
+      isCorrect: false,
+      missedWhileAway: isMissedWhileAway
+    })
+    if (isMissedWhileAway) {
+      console.log(`[CONNECTION] Question ${questionIndex} marked as missed while away`)
     }
-    selectedAnswer.value = null
-    answeredCurrentQuestion.value = answeredQuestions.has(questionIndex)
+  }
 
-    if (!questionHistory.value.find(q => q.index === questionIndex)) {
-      const isMissedWhileAway = connectionState.value === 'away' || !isPageVisible.value
-      questionHistory.value.push({
-        index: questionIndex,
-        text: question.text,
-        choices: question.choices,
-        imageUrl: question.imageUrl || null,
-        playerChoice: null,
-        correctChoice: isAlreadyRevealed ? question.correctChoice : undefined,
-        presented: true,
-        revealed: isAlreadyRevealed,
-        isCorrect: false,
-        missedWhileAway: isMissedWhileAway
-      })
-      if (isMissedWhileAway) {
-        console.log(`[CONNECTION] Question ${questionIndex} marked as missed while away`)
-      }
-    }
-
-    if (isAlreadyRevealed) {
-      const existingHistory = questionHistory.value.find(q => q.index === questionIndex)
-      if (existingHistory && existingHistory.playerChoice !== null) {
-        playerGotCorrect.value = existingHistory.isCorrect
-        statusMessage.value = existingHistory.isCorrect ? 'Você acertou! 🎉' : 'Não foi dessa vez!'
-        statusMessageType.value = existingHistory.isCorrect ? 'success' : 'error'
-      } else {
-        playerGotCorrect.value = false
-        statusMessage.value = 'Esta questão já foi revelada'
-        statusMessageType.value = 'info'
-      }
-    } else if (answeredCurrentQuestion.value) {
-      statusMessage.value = 'Você já respondeu esta questão'
-      statusMessageType.value = 'warning'
+  if (isAlreadyRevealed) {
+    const existingHistory = questionHistory.value.find(q => q.index === questionIndex)
+    if (existingHistory && existingHistory.playerChoice !== null) {
+      playerGotCorrect.value = existingHistory.isCorrect
+      statusMessage.value = existingHistory.isCorrect ? 'Você acertou! 🎉' : 'Não foi dessa vez!'
+      statusMessageType.value = existingHistory.isCorrect ? 'success' : 'error'
     } else {
-      statusMessage.value = 'Selecione sua resposta'
+      playerGotCorrect.value = false
+      statusMessage.value = 'Esta questão já foi revelada'
       statusMessageType.value = 'info'
     }
-  })
+  } else if (answeredCurrentQuestion.value) {
+    statusMessage.value = 'Você já respondeu esta questão'
+    statusMessageType.value = 'warning'
+  } else {
+    statusMessage.value = 'Selecione sua resposta'
+    statusMessageType.value = 'info'
+  }
+})
 
   socket.on('questionRevealed', ({ questionIndex, question, results, answerDisplayTime, revealedCount: rc, totalQuestions: tq }) => {
+    questionStartedAt.value = null
     if (tq !== undefined) {
       revealedCount.value = rc || 0
       totalQuestions.value = tq
@@ -1070,7 +1074,16 @@ const confirmAnswer = () => {
     historyItem.missedWhileAway = false
   }
 
-  socket.emit('submitAnswer', { roomCode: currentRoomCode.value, choice: idx })
+  const responseTimeMs = questionStartedAt.value
+    ? Math.max(0, Date.now() - questionStartedAt.value)
+    : 0
+
+  socket.emit('submitAnswer', {
+    roomCode: currentRoomCode.value,
+    choice: idx,
+    responseTimeMs
+  })
+
   statusMessage.value = 'Resposta enviada! ✓'
   statusMessageType.value = 'success'
 
@@ -1314,6 +1327,7 @@ const confirmLeaveRoom = () => {
 const handleLeaveRoom = () => {
   inRoom.value = false
   currentRoomCode.value = null
+  questionStartedAt.value = null
   currentUsername.value = null
   currentDisplayName.value = null
   questionDisplaying.value = false
