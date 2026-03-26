@@ -1049,16 +1049,17 @@ const getOrCreateRoomSession = (playerID, roomCode, username, socketId) => {
     roomSessionID = generateRoomSessionID(playerID, roomCode);
     roomSessions.set(sessionKey, roomSessionID);
 
-    roomSessionData.set(roomSessionID, {
-      playerID,
-      roomCode,
-      username,
-      socketId,
-      answers: {},
-      joinedAt: new Date().toISOString(),
-      lastActive: Date.now(),
-      reconnectionCount: 0
-    });
+  roomSessionData.set(roomSessionID, {
+  playerID,
+  roomCode,
+  username,
+  socketId,
+  answers: {},
+  answerTimes: {},
+  joinedAt: new Date().toISOString(),
+  lastActive: Date.now(),
+  reconnectionCount: 0
+});
 
     if (DEBUG_ENABLED) {
       console.log('[ROOM SESSION] Created new RoomSessionID', {
