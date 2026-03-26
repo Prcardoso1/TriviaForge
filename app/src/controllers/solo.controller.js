@@ -6,7 +6,7 @@
  * - List solo-enabled quizzes (public, no auth required)
  * - Get quiz for play (without correct answers)
  * - Create solo session
- * - Submit answer (returns immediate feedback)
+ * - Submit answer (returns immediate feedback) 
  * - Complete session
  * - Get session results
  */
