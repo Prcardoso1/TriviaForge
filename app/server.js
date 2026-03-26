@@ -2333,7 +2333,11 @@ io.on('connection', (socket) => {
   });
 
   // Player submits answer
-  socket.on('submitAnswer', ({ roomCode, choice }) => {
+  socket.on('submitAnswer', ({ roomCode, choice, responseTimeMs }) => {
+   const safeResponseTimeMs =
+    Number.isFinite(Number(responseTimeMs)) && Number(responseTimeMs) >= 0
+      ? Number(responseTimeMs)
+      : 0 
     // Rate limiting check (v5.5.0)
     const clientIP = socket.handshake.headers['x-forwarded-for']?.split(',')[0]?.trim() || socket.handshake.address || 'unknown';
     if (!checkSocketRateLimit(clientIP, 'answer')) {
