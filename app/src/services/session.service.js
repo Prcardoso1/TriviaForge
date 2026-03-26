@@ -87,7 +87,26 @@ class SessionService {
           [sessionId, question.id, i, isPresented, isRevealed]
         );
       }
+const playerAnswers = player.answers && typeof player.answers === 'object' ? player.answers : {};
+const playerAnswerTimes =
+  player.answerTimes && typeof player.answerTimes === 'object' ? player.answerTimes : {};
 
+let calculatedScore = 0;
+let calculatedTotalTimeMs = 0;
+
+for (const [questionIndexStr, choiceIndex] of Object.entries(playerAnswers)) {
+  const questionIndex = parseInt(questionIndexStr, 10);
+  const question = room.quizData.questions[questionIndex];
+  if (!question) continue;
+
+  const correctChoiceIndex = question.correctChoice;
+  const isCorrect = choiceIndex === correctChoiceIndex;
+
+  if (isCorrect) {
+    calculatedScore += 1;
+    calculatedTotalTimeMs += Number(playerAnswerTimes[questionIndex] || 0);
+  }
+}
       // 3. Insert or update game_participants and their answers
       for (const player of Object.values(room.players)) {
         // Skip spectators from database saves
@@ -101,72 +120,78 @@ class SessionService {
         if (player.userId) {
           // Registered user: use ON CONFLICT on the partial unique index
           participantResult = await client.query(
-            `
-            INSERT INTO game_participants (
-              user_id, game_session_id, display_name, score,
-              is_connected, socket_id, joined_at, last_seen
-            )
-            VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
-            ON CONFLICT (user_id, game_session_id)
-            WHERE user_id IS NOT NULL
-            DO UPDATE SET
-              display_name = EXCLUDED.display_name,
-              is_connected = EXCLUDED.is_connected,
-              socket_id = EXCLUDED.socket_id,
-              last_seen = EXCLUDED.last_seen
-            RETURNING id
-          `,
-            [
-              player.userId,
-              sessionId,
-              player.name,
-              0,
-              player.connected || false,
-              player.id,
-              new Date(),
-              new Date(),
-            ]
-          );
+  `
+  INSERT INTO game_participants (
+    user_id, game_session_id, display_name, score, total_time_ms,
+    is_connected, socket_id, joined_at, last_seen
+  )
+  VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
+  ON CONFLICT (user_id, game_session_id)
+  WHERE user_id IS NOT NULL
+  DO UPDATE SET
+    display_name = EXCLUDED.display_name,
+    score = EXCLUDED.score,
+    total_time_ms = EXCLUDED.total_time_ms,
+    is_connected = EXCLUDED.is_connected,
+    socket_id = EXCLUDED.socket_id,
+    last_seen = EXCLUDED.last_seen
+  RETURNING id
+`,
+  [
+    player.userId,
+    sessionId,
+    player.name,
+    calculatedScore,
+    calculatedTotalTimeMs,
+    player.connected || false,
+    player.id,
+    new Date(),
+    new Date(),
+  ]
+);
         } else {
           // Guest user: try to find existing by socket_id, or insert new
-          participantResult = await client.query(
-            `SELECT id FROM game_participants WHERE game_session_id = $1 AND socket_id = $2`,
-            [sessionId, player.id]
-          );
-
-          if (participantResult.rows.length === 0) {
-            // Insert new guest participant
-            participantResult = await client.query(
-              `
-              INSERT INTO game_participants (
-                user_id, game_session_id, display_name, score,
-                is_connected, socket_id, joined_at, last_seen
-              )
-              VALUES (NULL, $1, $2, $3, $4, $5, $6, $7)
-              RETURNING id
-            `,
-              [
-                sessionId,
-                player.name,
-                0,
-                player.connected || false,
-                player.id,
-                new Date(),
-                new Date(),
-              ]
-            );
+         participantResult = await client.query(
+  `
+  INSERT INTO game_participants (
+    user_id, game_session_id, display_name, score, total_time_ms,
+    is_connected, socket_id, joined_at, last_seen
+  )
+  VALUES (NULL, $1, $2, $3, $4, $5, $6, $7)
+  RETURNING id
+`,
+  [
+    sessionId,
+    player.name,
+    calculatedScore,
+    calculatedTotalTimeMs,
+    player.connected || false,
+    player.id,
+    new Date(),
+    new Date(),
+  ]
+);
           } else {
             // Update existing guest participant
-            await client.query(
-              `
-              UPDATE game_participants SET
-                display_name = $1,
-                is_connected = $2,
-                last_seen = $3
-              WHERE id = $4
-            `,
-              [player.name, player.connected || false, new Date(), participantResult.rows[0].id]
-            );
+          await client.query(
+  `
+  UPDATE game_participants SET
+    display_name = $1,
+    score = $2,
+    total_time_ms = $3,
+    is_connected = $4,
+    last_seen = $5
+  WHERE id = $6
+`,
+  [
+    player.name,
+    calculatedScore,
+    calculatedTotalTimeMs,
+    player.connected || false,
+    new Date(),
+    participantResult.rows[0].id
+  ]
+);
           }
         }
 
@@ -193,15 +218,22 @@ class SessionService {
                 const answer = answerResult.rows[0];
 
                 await client.query(
-                  `
-                  INSERT INTO participant_answers (
-                    participant_id, question_id, answer_id, is_correct, answered_at
-                  )
-                  VALUES ($1, $2, $3, $4, $5)
-                  ON CONFLICT (participant_id, question_id) DO NOTHING
-                `,
-                  [participantId, question.id, answer.id, answer.is_correct, new Date()]
-                );
+  `
+  INSERT INTO participant_answers (
+    participant_id, question_id, answer_id, is_correct, response_time_ms, answered_at
+  )
+  VALUES ($1, $2, $3, $4, $5, $6)
+  ON CONFLICT (participant_id, question_id) DO NOTHING
+`,
+  [
+    participantId,
+    question.id,
+    answer.id,
+    answer.is_correct,
+    Number(playerAnswerTimes[questionIndex] || 0),
+    new Date()
+  ]
+);
               }
             }
           }
