@@ -1753,6 +1753,7 @@ io.on('connection', (socket) => {
             connected: false,
             connectionState: 'disconnected', // Mark resumed players as disconnected until they rejoin
             answers: {},
+            answerTimes: {},
             isResumed: true,
             isSpectator // Mark spectators properly when loading from database
           });
@@ -2415,9 +2416,12 @@ io.on('connection', (socket) => {
 
       player.choice = choice;
 
-      // Record answer in player's history
-      if (!player.answers) player.answers = {};
-      player.answers[room.currentQuestionIndex] = choice;
+     // Record answer in player's history
+    if (!player.answers) player.answers = {};
+    player.answers[room.currentQuestionIndex] = choice;
+    
+    if (!player.answerTimes) player.answerTimes = {};
+    player.answerTimes[room.currentQuestionIndex] = safeResponseTimeMs;
 
       // PHASE 3: Update RoomSessionID with answer data
       if (player.roomSessionID) {
@@ -3116,6 +3120,7 @@ if (DEBUG_ENABLED) {
         connected: true,
         connectionState: 'connected',
         answers: {},
+        answerTimes: {},
         isSpectator: isSpectator || false
       };
 
@@ -3445,6 +3450,7 @@ if (DEBUG_ENABLED) {
             connected: true,
             connectionState: 'connected',
             answers: {},
+            answerTimes: {},
             isSpectator: false
           };
         }
