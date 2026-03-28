@@ -38,17 +38,17 @@ class SessionService {
 
       const sessionResult = await client.query(
         `
-      INSERT INTO game_sessions (
-        quiz_id, room_code, status, current_question_index,
-        created_at, completed_at, original_session_id, created_by
-      )
-      VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
-      ON CONFLICT (room_code) DO UPDATE SET
-        status = $3,
-        current_question_index = $4,
-        completed_at = $6
-      RETURNING id
-    `,
+        INSERT INTO game_sessions (
+          quiz_id, room_code, status, current_question_index,
+          created_at, completed_at, original_session_id, created_by
+        )
+        VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
+        ON CONFLICT (room_code) DO UPDATE SET
+          status = $3,
+          current_question_index = $4,
+          completed_at = $6
+        RETURNING id
+        `,
         [
           room.quizId,
           roomCode,
@@ -83,34 +83,36 @@ class SessionService {
             presentation_order = EXCLUDED.presentation_order,
             is_presented = EXCLUDED.is_presented,
             is_revealed = EXCLUDED.is_revealed
-        `,
+          `,
           [sessionId, question.id, i, isPresented, isRevealed]
         );
       }
-const playerAnswers = player.answers && typeof player.answers === 'object' ? player.answers : {};
-const playerAnswerTimes =
-  player.answerTimes && typeof player.answerTimes === 'object' ? player.answerTimes : {};
 
-let calculatedScore = 0;
-let calculatedTotalTimeMs = 0;
-
-for (const [questionIndexStr, choiceIndex] of Object.entries(playerAnswers)) {
-  const questionIndex = parseInt(questionIndexStr, 10);
-  const question = room.quizData.questions[questionIndex];
-  if (!question) continue;
-
-  const correctChoiceIndex = question.correctChoice;
-  const isCorrect = choiceIndex === correctChoiceIndex;
-
-  if (isCorrect) {
-    calculatedScore += 1;
-    calculatedTotalTimeMs += Number(playerAnswerTimes[questionIndex] || 0);
-  }
-}
       // 3. Insert or update game_participants and their answers
       for (const player of Object.values(room.players)) {
         // Skip spectators from database saves
         if (player.isSpectator) continue;
+
+        const playerAnswers = player.answers && typeof player.answers === 'object' ? player.answers : {};
+        const playerAnswerTimes =
+          player.answerTimes && typeof player.answerTimes === 'object' ? player.answerTimes : {};
+
+        let calculatedScore = 0;
+        let calculatedTotalTimeMs = 0;
+
+        for (const [questionIndexStr, choiceIndex] of Object.entries(playerAnswers)) {
+          const questionIndex = parseInt(questionIndexStr, 10);
+          const question = room.quizData.questions[questionIndex];
+          if (!question) continue;
+
+          const correctChoiceIndex = question.correctChoice;
+          const isCorrect = choiceIndex === correctChoiceIndex;
+
+          if (isCorrect) {
+            calculatedScore += 1;
+            calculatedTotalTimeMs += Number(playerAnswerTimes[questionIndex] || 0);
+          }
+        }
 
         // Insert or update participant with user_id from guest/registered account
         // For guests (null user_id), we can't use ON CONFLICT since the partial
@@ -120,98 +122,98 @@ for (const [questionIndexStr, choiceIndex] of Object.entries(playerAnswers)) {
         if (player.userId) {
           // Registered user: use ON CONFLICT on the partial unique index
           participantResult = await client.query(
-  `
-  INSERT INTO game_participants (
-    user_id, game_session_id, display_name, score, total_time_ms,
-    is_connected, socket_id, joined_at, last_seen
-  )
-  VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
-  ON CONFLICT (user_id, game_session_id)
-  WHERE user_id IS NOT NULL
-  DO UPDATE SET
-    display_name = EXCLUDED.display_name,
-    score = EXCLUDED.score,
-    total_time_ms = EXCLUDED.total_time_ms,
-    is_connected = EXCLUDED.is_connected,
-    socket_id = EXCLUDED.socket_id,
-    last_seen = EXCLUDED.last_seen
-  RETURNING id
-`,
-  [
-    player.userId,
-    sessionId,
-    player.name,
-    calculatedScore,
-    calculatedTotalTimeMs,
-    player.connected || false,
-    player.id,
-    new Date(),
-    new Date(),
-  ]
-);
+            `
+            INSERT INTO game_participants (
+              user_id, game_session_id, display_name, score, total_time_ms,
+              is_connected, socket_id, joined_at, last_seen
+            )
+            VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
+            ON CONFLICT (user_id, game_session_id)
+            WHERE user_id IS NOT NULL
+            DO UPDATE SET
+              display_name = EXCLUDED.display_name,
+              score = EXCLUDED.score,
+              total_time_ms = EXCLUDED.total_time_ms,
+              is_connected = EXCLUDED.is_connected,
+              socket_id = EXCLUDED.socket_id,
+              last_seen = EXCLUDED.last_seen
+            RETURNING id
+            `,
+            [
+              player.userId,
+              sessionId,
+              player.name,
+              calculatedScore,
+              calculatedTotalTimeMs,
+              player.connected || false,
+              player.id,
+              new Date(),
+              new Date(),
+            ]
+          );
         } else {
-  // Guest user: try to find existing by socket_id, or insert new
-  participantResult = await client.query(
-    `
-    SELECT id FROM game_participants
-    WHERE game_session_id = $1 AND socket_id = $2 AND user_id IS NULL
-    LIMIT 1
-    `,
-    [sessionId, player.id]
-  );
+          // Guest user: try to find existing by socket_id, or insert new
+          participantResult = await client.query(
+            `
+            SELECT id FROM game_participants
+            WHERE game_session_id = $1 AND socket_id = $2 AND user_id IS NULL
+            LIMIT 1
+            `,
+            [sessionId, player.id]
+          );
 
-  if (participantResult.rows.length === 0) {
-    // Insert new guest participant
-    participantResult = await client.query(
-      `
-      INSERT INTO game_participants (
-        user_id, game_session_id, display_name, score, total_time_ms,
-        is_connected, socket_id, joined_at, last_seen
-      )
-      VALUES (NULL, $1, $2, $3, $4, $5, $6, $7)
-      RETURNING id
-      `,
-      [
-        sessionId,
-        player.name,
-        calculatedScore,
-        calculatedTotalTimeMs,
-        player.connected || false,
-        player.id,
-        new Date(),
-        new Date(),
-      ]
-    );
-  } else {
-    // Update existing guest participant
-    await client.query(
-      `
-      UPDATE game_participants SET
-        display_name = $1,
-        score = $2,
-        total_time_ms = $3,
-        is_connected = $4,
-        last_seen = $5
-      WHERE id = $6
-      `,
-      [
-        player.name,
-        calculatedScore,
-        calculatedTotalTimeMs,
-        player.connected || false,
-        new Date(),
-        participantResult.rows[0].id
-      ]
-    );
-  }
-}
+          if (participantResult.rows.length === 0) {
+            // Insert new guest participant
+            participantResult = await client.query(
+              `
+              INSERT INTO game_participants (
+                user_id, game_session_id, display_name, score, total_time_ms,
+                is_connected, socket_id, joined_at, last_seen
+              )
+              VALUES (NULL, $1, $2, $3, $4, $5, $6, $7)
+              RETURNING id
+              `,
+              [
+                sessionId,
+                player.name,
+                calculatedScore,
+                calculatedTotalTimeMs,
+                player.connected || false,
+                player.id,
+                new Date(),
+                new Date(),
+              ]
+            );
+          } else {
+            // Update existing guest participant
+            await client.query(
+              `
+              UPDATE game_participants SET
+                display_name = $1,
+                score = $2,
+                total_time_ms = $3,
+                is_connected = $4,
+                last_seen = $5
+              WHERE id = $6
+              `,
+              [
+                player.name,
+                calculatedScore,
+                calculatedTotalTimeMs,
+                player.connected || false,
+                new Date(),
+                participantResult.rows[0].id,
+              ]
+            );
+          }
+        }
 
         const participantId = participantResult.rows[0].id;
 
         // 4. Insert participant answers
-        if (player.answers && typeof player.answers === 'object') {
-          for (const [questionIndexStr, choiceIndex] of Object.entries(player.answers)) {
-            const questionIndex = parseInt(questionIndexStr);
+        if (playerAnswers && typeof playerAnswers === 'object') {
+          for (const [questionIndexStr, choiceIndex] of Object.entries(playerAnswers)) {
+            const questionIndex = parseInt(questionIndexStr, 10);
             const question = room.quizData.questions[questionIndex];
 
             if (question && question.id) {
@@ -221,7 +223,7 @@ for (const [questionIndexStr, choiceIndex] of Object.entries(playerAnswers)) {
                 SELECT id, is_correct
                 FROM answers
                 WHERE question_id = $1 AND display_order = $2
-              `,
+                `,
                 [question.id, choiceIndex]
               );
 
@@ -229,22 +231,22 @@ for (const [questionIndexStr, choiceIndex] of Object.entries(playerAnswers)) {
                 const answer = answerResult.rows[0];
 
                 await client.query(
-  `
-  INSERT INTO participant_answers (
-    participant_id, question_id, answer_id, is_correct, response_time_ms, answered_at
-  )
-  VALUES ($1, $2, $3, $4, $5, $6)
-  ON CONFLICT (participant_id, question_id) DO NOTHING
-`,
-  [
-    participantId,
-    question.id,
-    answer.id,
-    answer.is_correct,
-    Number(playerAnswerTimes[questionIndex] || 0),
-    new Date()
-  ]
-);
+                  `
+                  INSERT INTO participant_answers (
+                    participant_id, question_id, answer_id, is_correct, response_time_ms, answered_at
+                  )
+                  VALUES ($1, $2, $3, $4, $5, $6)
+                  ON CONFLICT (participant_id, question_id) DO NOTHING
+                  `,
+                  [
+                    participantId,
+                    question.id,
+                    answer.id,
+                    answer.is_correct,
+                    Number(playerAnswerTimes[questionIndex] || 0),
+                    new Date(),
+                  ]
+                );
               }
             }
           }
@@ -262,7 +264,7 @@ for (const [questionIndexStr, choiceIndex] of Object.entries(playerAnswers)) {
           DELETE FROM game_participants
           WHERE game_session_id = $1
             AND user_id NOT IN (${currentUserIds.map((_, i) => `$${i + 2}`).join(', ')})
-        `,
+          `,
           [sessionId, ...currentUserIds]
         );
       }
@@ -296,7 +298,7 @@ for (const [questionIndexStr, choiceIndex] of Object.entries(playerAnswers)) {
           created_at, completed_at, original_session_id, original_room_code
         FROM game_sessions
         WHERE id = $1
-      `,
+        `,
         [sessionId]
       );
 
@@ -313,7 +315,7 @@ for (const [questionIndexStr, choiceIndex] of Object.entries(playerAnswers)) {
         FROM session_questions
         WHERE game_session_id = $1
         ORDER BY presentation_order
-      `,
+        `,
         [sessionId]
       );
 
@@ -336,6 +338,7 @@ for (const [questionIndexStr, choiceIndex] of Object.entries(playerAnswers)) {
           gp.socket_id,
           u.username,
           pa.question_id,
+          pa.response_time_ms,
           sq.presentation_order,
           pa.answer_id,
           a.display_order as choice_index
@@ -346,7 +349,7 @@ for (const [questionIndexStr, choiceIndex] of Object.entries(playerAnswers)) {
         LEFT JOIN answers a ON pa.answer_id = a.id
         WHERE gp.game_session_id = $1
         ORDER BY gp.display_name, sq.presentation_order
-      `,
+        `,
         [sessionId]
       );
 
@@ -364,12 +367,14 @@ for (const [questionIndexStr, choiceIndex] of Object.entries(playerAnswers)) {
             userId: row.user_id,
             connected: row.is_connected,
             answers: {},
+            answerTimes: {},
             isSpectator,
           };
         }
 
         if (row.presentation_order !== null && row.choice_index !== null) {
           players[username].answers[row.presentation_order] = row.choice_index;
+          players[username].answerTimes[row.presentation_order] = row.response_time_ms || 0;
         }
       }
 
