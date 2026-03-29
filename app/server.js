@@ -2414,33 +2414,76 @@ io.on('connection', (socket) => {
         return;
       }
 
-      player.choice = choice;
-
-     // Record answer in player's history
-    if (!player.answers) player.answers = {};
-    player.answers[room.currentQuestionIndex] = choice;
-    
-    if (!player.answerTimes) player.answerTimes = {};
-    player.answerTimes[room.currentQuestionIndex] = safeResponseTimeMs;
-
-      // PHASE 3: Update RoomSessionID with answer data
-      if (player.roomSessionID) {
-        updateRoomSessionAnswer(player.roomSessionID,room.currentQuestionIndex,choice,safeResponseTimeMs);
-      }
-
-      if (DEBUG_ENABLED) {
-        console.log('[ANSWER DEBUG] Answer recorded successfully', {
-          username: player.username,
-          displayName: player.name,
-          playerID: player.playerID,
-          roomSessionID: player.roomSessionID,
-          questionIndex: room.currentQuestionIndex,
-          choice,
-          totalAnswers: Object.keys(player.answers).length
+        player.choice = choice;
+        
+        // Record answer in player's history
+        if (!player.answers) player.answers = {};
+        player.answers[room.currentQuestionIndex] = choice;
+        
+        if (!player.answerTimes) player.answerTimes = {};
+        player.answerTimes[room.currentQuestionIndex] = safeResponseTimeMs;
+        
+        // Calculate correctness and update live ranking fields
+        const currentQuestion = room.quizData.questions[room.currentQuestionIndex];
+        const isCorrect = currentQuestion && choice === currentQuestion.correctChoice;
+        
+        if (player.score === undefined || player.score === null) player.score = 0;
+        if (player.total_time_ms === undefined || player.total_time_ms === null) player.total_time_ms = 0;
+        
+        // Prevent double counting if something tries to reprocess the same answer
+        if (!player.scoredQuestions) player.scoredQuestions = {};
+        if (isCorrect && !player.scoredQuestions[room.currentQuestionIndex]) {
+          player.score += 1;
+          player.total_time_ms += safeResponseTimeMs;
+          player.scoredQuestions[room.currentQuestionIndex] = true;
+        } else if (!player.scoredQuestions[room.currentQuestionIndex]) {
+          player.scoredQuestions[room.currentQuestionIndex] = false;
+        }
+        
+        // PHASE 3: Update RoomSessionID with answer data
+        if (player.roomSessionID) {
+          updateRoomSessionAnswer(
+            player.roomSessionID,
+            room.currentQuestionIndex,
+            choice,
+            safeResponseTimeMs
+          );
+        }
+        
+        if (DEBUG_ENABLED) {
+          console.log('[ANSWER DEBUG] Answer recorded successfully', {
+            username: player.username,
+            displayName: player.name,
+            playerID: player.playerID,
+            roomSessionID: player.roomSessionID,
+            questionIndex: room.currentQuestionIndex,
+            choice,
+            isCorrect,
+            responseTimeMs: safeResponseTimeMs,
+            liveScore: player.score,
+            liveTotalTimeMs: player.total_time_ms,
+            totalAnswers: Object.keys(player.answers).length
+          });
+        }
+        
+        const rankedPlayers = Object.values(room.players)
+          .filter(p => !p.isSpectator)
+          .map(p => ({
+            ...p,
+            score: p.score || 0,
+            total_time_ms: p.total_time_ms || 0
+          }))
+          .sort((a, b) => {
+            if ((b.score || 0) !== (a.score || 0)) {
+              return (b.score || 0) - (a.score || 0);
+            }
+            return (a.total_time_ms || 0) - (b.total_time_ms || 0);
+          });
+        
+        io.to(roomCode).emit('playerListUpdate', {
+          roomCode,
+          players: rankedPlayers
         });
-      }
-
-      io.to(roomCode).emit('playerListUpdate', { roomCode, players: Object.values(room.players).filter(p => !p.isSpectator) });
 
       console.log(`${player.name} answered question ${room.currentQuestionIndex} with choice ${choice}`);
 
