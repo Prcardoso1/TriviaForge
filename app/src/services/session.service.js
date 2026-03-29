@@ -368,6 +368,9 @@ class SessionService {
             connected: row.is_connected,
             answers: {},
             answerTimes: {},
+            score: 0,
+            total_time_ms: 0,
+            scoredQuestions: {},
             isSpectator,
           };
         }
