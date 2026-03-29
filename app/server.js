@@ -1056,6 +1056,9 @@ const getOrCreateRoomSession = (playerID, roomCode, username, socketId) => {
   socketId,
   answers: {},
   answerTimes: {},
+  score: 0,
+  total_time_ms: 0,
+  scoredQuestions: {},
   joinedAt: new Date().toISOString(),
   lastActive: Date.now(),
   reconnectionCount: 0
@@ -3494,6 +3497,9 @@ if (DEBUG_ENABLED) {
             connectionState: 'connected',
             answers: {},
             answerTimes: {},
+            score: 0,
+            total_time_ms: 0,
+            scoredQuestions: {},
             isSpectator: false
           };
         }
