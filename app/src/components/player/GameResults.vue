@@ -26,7 +26,9 @@
           <span class="podium-medal silver">2</span>
         </div>
         <div class="podium-name">{{ podiumPlayers[1].name }}</div>
-        <div class="podium-score">{{ podiumPlayers[1].score }}/{{ totalQuestions }}</div>
+        <div class="podium-score">
+          {{ podiumPlayers[1].score }}/{{ totalQuestions }} • {{ formatTime(podiumPlayers[1].total_time_ms) }}
+        </div>
         <div class="podium-block podium-block--second">
           <span class="podium-rank-label">2nd</span>
         </div>
@@ -45,7 +47,9 @@
           <span class="podium-medal gold">1</span>
         </div>
         <div class="podium-name podium-name--first">{{ podiumPlayers[0].name }}</div>
-        <div class="podium-score podium-score--first">{{ podiumPlayers[0].score }}/{{ totalQuestions }}</div>
+        <div class="podium-score podium-score--first">
+          {{ podiumPlayers[0].score }}/{{ totalQuestions }} • {{ formatTime(podiumPlayers[0].total_time_ms) }}
+        </div>
         <div class="podium-block podium-block--first">
           <span class="podium-rank-label">1st</span>
         </div>
@@ -61,7 +65,9 @@
           <span class="podium-medal bronze">3</span>
         </div>
         <div class="podium-name">{{ podiumPlayers[2].name }}</div>
-        <div class="podium-score">{{ podiumPlayers[2].score }}/{{ totalQuestions }}</div>
+        <div class="podium-score">
+          {{ podiumPlayers[2].score }}/{{ totalQuestions }} • {{ formatTime(podiumPlayers[2].total_time_ms) }}
+        </div>
         <div class="podium-block podium-block--third">
           <span class="podium-rank-label">3rd</span>
         </div>
@@ -84,7 +90,9 @@
         >
           <span class="remaining-rank">{{ idx + 4 }}</span>
           <span class="remaining-name">{{ player.name }}</span>
-          <span class="remaining-score">{{ player.score }}/{{ totalQuestions }}</span>
+          <span class="remaining-score">
+            {{ player.score }}/{{ totalQuestions }} • {{ formatTime(player.total_time_ms) }}
+          </span>
         </div>
       </div>
     </div>
@@ -106,7 +114,7 @@ const props = defineProps({
   players: {
     type: Array,
     required: true
-    // Each item: { name: String, score: Number, totalAnswered: Number }
+    // Each item: { name: String, score: Number, total_time_ms: Number }
   },
   totalQuestions: {
     type: Number,
@@ -129,11 +137,24 @@ onMounted(() => {
   });
 });
 
+const formatTime = (ms) => {
+  return ((ms || 0) / 1000).toFixed(3) + 's';
+};
+
+const sortedPlayers = computed(() => {
+  return [...props.players].sort((a, b) => {
+    if ((b.score || 0) !== (a.score || 0)) {
+      return (b.score || 0) - (a.score || 0);
+    }
+    return (a.total_time_ms || 0) - (b.total_time_ms || 0);
+  });
+});
+
 // First three players go on the podium
-const podiumPlayers = computed(() => props.players.slice(0, 3));
+const podiumPlayers = computed(() => sortedPlayers.value.slice(0, 3));
 
 // Everyone from 4th place onward
-const remainingPlayers = computed(() => props.players.slice(3));
+const remainingPlayers = computed(() => sortedPlayers.value.slice(3));
 </script>
 
 <style scoped>
@@ -233,7 +254,6 @@ const remainingPlayers = computed(() => props.players.slice(3));
   align-items: flex-end;
   justify-content: center;
   gap: 0.5rem;
-  /* Enough height that first-place block looks tall */
   min-height: 260px;
 }
 
@@ -244,7 +264,6 @@ const remainingPlayers = computed(() => props.players.slice(3));
   align-items: center;
   flex: 1;
   max-width: 180px;
-  /* Entrance: each slot slides up from below */
   opacity: 0;
   transform: translateY(40px);
   transition:
@@ -342,6 +361,7 @@ const remainingPlayers = computed(() => props.players.slice(3));
   color: var(--text-tertiary);
   margin-bottom: 0.6rem;
   font-variant-numeric: tabular-nums;
+  text-align: center;
 }
 
 .podium-score--first {
@@ -423,7 +443,6 @@ const remainingPlayers = computed(() => props.players.slice(3));
 .remaining-rows {
   max-height: 260px;
   overflow-y: auto;
-  /* Use shared scrollbar styles via custom properties if available */
   scrollbar-width: thin;
   scrollbar-color: var(--border-color) transparent;
 }
@@ -480,6 +499,7 @@ const remainingPlayers = computed(() => props.players.slice(3));
   color: var(--text-secondary);
   font-variant-numeric: tabular-nums;
   flex-shrink: 0;
+  text-align: right;
 }
 
 /* =============================================
@@ -523,7 +543,6 @@ const remainingPlayers = computed(() => props.players.slice(3));
     align-self: flex-end;
   }
 
-  /* On very small screens, compress podium slot widths */
   .podium-scene {
     gap: 0.25rem;
     min-height: 220px;
